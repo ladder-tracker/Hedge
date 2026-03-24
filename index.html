@@ -3,18 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cashout + Hedge Finder</title>
+<title>Should I Cash Out?</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <style>
-  body {
-    background: linear-gradient(180deg,#0b1220,#0f172a);
-  }
-  .card {
-    background: rgba(15,23,42,0.75);
-    border: 1px solid rgba(148,163,184,0.15);
-    backdrop-filter: blur(10px);
-  }
+body {
+  background: linear-gradient(180deg,#0b1220,#0f172a);
+}
+.card {
+  background: rgba(15,23,42,0.75);
+  border: 1px solid rgba(148,163,184,0.15);
+  backdrop-filter: blur(10px);
+}
+.active {
+  border: 1px solid #38bdf8;
+  background: rgba(30,41,59,0.9);
+}
 </style>
 </head>
 
@@ -24,12 +28,15 @@
 
   <!-- INPUT -->
   <div class="card rounded-2xl p-4 space-y-3">
-    <h1 class="text-xl font-bold">Cashout + Hedge Finder</h1>
+    <h1 class="text-xl font-bold">Should I Cash Out?</h1>
 
-    <input id="stake" type="number" placeholder="Original Stake ($)"
+    <input id="stake" type="number" placeholder="Stake ($)"
       class="w-full h-12 rounded-xl bg-slate-900 px-4">
 
-    <input id="payout" type="number" placeholder="Potential Payout ($)"
+    <input id="payout" type="number" placeholder="Payout ($)"
+      class="w-full h-12 rounded-xl bg-slate-900 px-4">
+
+    <input id="cashout" type="number" placeholder="Cashout Offer ($) (optional)"
       class="w-full h-12 rounded-xl bg-slate-900 px-4">
   </div>
 
@@ -38,23 +45,32 @@
 
     <!-- MAIN -->
     <div>
-      <div id="mainLine" class="text-lg font-bold"></div>
-      <div id="cashoutLine" class="text-emerald-300 font-semibold mt-1"></div>
+      <div id="fairValue" class="text-2xl font-bold"></div>
+      <div id="guidance" class="text-sm text-slate-300 mt-1"></div>
     </div>
+
+    <!-- CASHOUT COMP -->
+    <div id="comparison" class="text-sm"></div>
+
+    <!-- HEDGE INFO -->
+    <div id="hedgeInfo" class="text-sm text-slate-400"></div>
 
     <!-- SCENARIOS -->
     <div class="grid grid-cols-3 gap-2 text-sm">
+      <div id="s1" class="p-3 rounded-xl bg-white/5 text-center cursor-pointer"></div>
+      <div id="s2" class="p-3 rounded-xl bg-white/10 text-center cursor-pointer"></div>
+      <div id="s3" class="p-3 rounded-xl bg-white/5 text-center cursor-pointer"></div>
+    </div>
 
-      <div id="s1" class="p-3 rounded-xl bg-white/5 text-center"></div>
-      <div id="s2" class="p-3 rounded-xl bg-white/10 text-center border border-sky-400"></div>
-      <div id="s3" class="p-3 rounded-xl bg-white/5 text-center"></div>
-
+    <!-- EXPLAIN -->
+    <div class="text-xs text-slate-400">
+      Cashouts are typically priced below hedge value due to sportsbook margin.
     </div>
 
     <!-- TIP -->
     <a href="https://buy.stripe.com/5kQ9AV1Jr9G79tNbLdeME00"
        target="_blank"
-       class="block text-center text-xs text-amber-300 mt-2">
+       class="block text-center text-xs text-amber-300">
        Support the tool
     </a>
 
@@ -64,78 +80,94 @@
 
 <script>
 
+let selectedOdds = -110;
+
 function toDecimal(odds){
   return odds > 0 ? 1 + odds/100 : 1 + 100/Math.abs(odds);
 }
 
-function calcScenario(S, P, odds){
+function calc(S,P,odds){
 
   const d = toDecimal(odds);
-
   const hedge = P / d;
 
   const win = P - hedge - S;
-  const hedgeWin = hedge * (d - 1) - S;
+  const hedgeWin = hedge*(d-1) - S;
 
-  const locked = Math.min(win, hedgeWin);
+  const locked = Math.min(win,hedgeWin);
+  const fairCashout = S + locked;
 
-  const cashout = S + locked;
-
-  return {
-    hedge,
-    locked,
-    cashout
-  };
+  return {hedge, locked, fairCashout};
 }
 
-function format(n){
-  return "$" + n.toFixed(2);
+function f(n){
+  return "$"+n.toFixed(2);
 }
 
 function update(){
 
-  const S = parseFloat(document.getElementById('stake').value);
-  const P = parseFloat(document.getElementById('payout').value);
+  const S = parseFloat(stake.value);
+  const P = parseFloat(payout.value);
+  const C = parseFloat(cashout.value);
 
   if(!S || !P || P <= S){
-    document.getElementById('resultCard').classList.add('hidden');
+    resultCard.classList.add('hidden');
     return;
   }
 
-  const scenarios = [
-    {odds: -200, el: "s1"},
-    {odds: -110, el: "s2"},
-    {odds: +100, el: "s3"}
-  ];
+  const main = calc(S,P,selectedOdds);
 
-  const results = scenarios.map(s => ({
-    ...s,
-    ...calcScenario(S,P,s.odds)
-  }));
+  // MAIN
+  fairValue.innerText = `Fair cashout ≈ ${f(main.fairCashout)}`;
 
-  // MAIN = -110
-  const main = results[1];
+  guidance.innerText = `Cashout should be around this range to be fair`;
 
-  document.getElementById('mainLine').innerText =
-    `Hedge ${format(main.hedge)} → lock ${format(main.locked)}`;
+  // COMPARISON
+  if(C){
+    const diff = C - main.fairCashout;
 
-  document.getElementById('cashoutLine').innerText =
-    `Don’t cash out below ${format(main.cashout)}`;
+    if(diff >= 0){
+      comparison.innerHTML = `Offer: ${f(C)} → <span class="text-emerald-300">Good value (+${f(diff)})</span>`;
+    } else {
+      comparison.innerHTML = `Offer: ${f(C)} → <span class="text-red-300">Below fair (${f(diff)})</span>`;
+    }
+  } else {
+    comparison.innerHTML = "";
+  }
+
+  // HEDGE INFO
+  hedgeInfo.innerText =
+    `At ${selectedOdds}: hedge ${f(main.hedge)} → lock ${f(main.locked)}`;
 
   // SCENARIOS
-  results.forEach(r => {
-    document.getElementById(r.el).innerHTML = `
-      <div class="font-semibold">${r.odds}</div>
-      <div class="text-xs mt-1">${format(r.hedge)}</div>
-      <div class="text-emerald-300 text-xs">${format(r.locked)}</div>
+  const scenarios = [
+    {odds:-200, el:s1},
+    {odds:-110, el:s2},
+    {odds:100, el:s3}
+  ];
+
+  scenarios.forEach(s=>{
+    const r = calc(S,P,s.odds);
+
+    s.el.innerHTML = `
+      <div>${s.odds}</div>
+      <div class="text-xs mt-1">${f(r.fairCashout)}</div>
     `;
+
+    s.el.classList.toggle("active", s.odds===selectedOdds);
+
+    s.el.onclick = ()=>{
+      selectedOdds = s.odds;
+      update();
+    };
   });
 
-  document.getElementById('resultCard').classList.remove('hidden');
+  resultCard.classList.remove('hidden');
 }
 
-document.getElementById('stake').addEventListener('input', update);
-document.getElementById('payout').addEventListener('input', update);
+stake.oninput = update;
+payout.oninput = update;
+cashout.oninput = update;
 
 </script>
 
