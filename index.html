@@ -1,3 +1,13 @@
+Here is the refactored full code with:
+	•	Live / Not Live Yet modes
+	•	Live Hedge Odds / Win Probability % toggle in Live mode
+	•	free-form remaining leg fields in Not Live Yet mode
+	•	centralized odds parsing
+	•	mode-specific validation
+	•	smarter offer grading
+	•	no share card
+	•	no legacy clutter
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,14 +37,17 @@
       border: 1px solid rgba(148, 163, 184, 0.10);
       box-shadow: 0 12px 30px rgba(0,0,0,0.22);
     }
-    .mode-btn {
+    .toggle-btn {
       transition: 180ms ease;
     }
-    .mode-btn.active {
+    .toggle-btn.active {
       border-color: rgba(56, 189, 248, 0.95);
       box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35) inset;
       background: rgba(30, 41, 59, 0.95);
       color: white;
+    }
+    .leg-row input {
+      min-width: 0;
     }
   </style>
 </head>
@@ -47,11 +60,24 @@
         </div>
         <h1 class="text-2xl md:text-4xl font-bold mt-3">Should I Cash Out?</h1>
         <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl">
-          Enter your stake, payout, and either live hedge odds or your estimated win probability. The tool estimates what the ticket is worth right now and how the cashout offer compares.
+          Check what your ticket is worth right now and compare it against a live cashout offer.
         </p>
       </div>
 
       <div class="p-4 md:p-6 space-y-4">
+        <!-- Mode -->
+        <div class="glass-soft rounded-[22px] p-4 space-y-4">
+          <div class="text-base font-semibold">Mode</div>
+          <div class="grid grid-cols-2 gap-3">
+            <button id="liveModeBtn" type="button" class="toggle-btn active h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium">
+              Live
+            </button>
+            <button id="notLiveModeBtn" type="button" class="toggle-btn h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium">
+              Not Live Yet
+            </button>
+          </div>
+        </div>
+
         <!-- Bet Info -->
         <div class="glass-soft rounded-[22px] p-4 space-y-4">
           <div class="text-base font-semibold">Your Bet</div>
@@ -99,23 +125,15 @@
           </div>
         </div>
 
-        <!-- Live input mode -->
-        <div class="glass-soft rounded-[22px] p-4 space-y-4">
+        <!-- Live mode inputs -->
+        <div id="liveInputsWrap" class="glass-soft rounded-[22px] p-4 space-y-4">
           <div class="text-base font-semibold">Live Value Input</div>
 
           <div class="grid grid-cols-2 gap-3">
-            <button
-              id="modeOddsBtn"
-              type="button"
-              class="mode-btn active h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium"
-            >
+            <button id="oddsModeBtn" type="button" class="toggle-btn active h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium">
               Live Hedge Odds
             </button>
-            <button
-              id="modeProbBtn"
-              type="button"
-              class="mode-btn h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium"
-            >
+            <button id="probModeBtn" type="button" class="toggle-btn h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium">
               Win Probability %
             </button>
           </div>
@@ -125,12 +143,12 @@
             <input
               id="oddsInput"
               type="text"
-              inputmode="numeric"
+              inputmode="text"
               placeholder="-500"
               class="w-full h-12 rounded-2xl border border-white/10 bg-slate-950/50 px-4 text-white placeholder:text-slate-500"
             />
             <div class="text-xs text-slate-400 mt-2">
-              Use the current live price you could hedge at right now.
+              Example: -500, +120, or 120.
             </div>
           </div>
 
@@ -147,14 +165,35 @@
               class="w-full h-12 rounded-2xl border border-white/10 bg-slate-950/50 px-4 text-white placeholder:text-slate-500"
             />
             <div class="text-xs text-slate-400 mt-2">
-              Enter your estimate of the bet winning from this point forward.
+              Enter your estimate of the ticket winning from here.
             </div>
           </div>
         </div>
 
-        <!-- Empty -->
+        <!-- Not live yet inputs -->
+        <div id="notLiveInputsWrap" class="hidden glass-soft rounded-[22px] p-4 space-y-4">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-base font-semibold">Remaining Legs</div>
+            <button
+              id="addLegBtn"
+              type="button"
+              class="h-10 px-4 rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-200 text-sm font-medium hover:bg-sky-400/15"
+            >
+              + Add leg
+            </button>
+          </div>
+
+          <div class="text-xs text-slate-400">
+            Add the odds for any legs that have not started yet.
+          </div>
+
+          <div id="remainingLegsWrap" class="space-y-3"></div>
+          <div id="remainingLegsEmpty" class="text-sm text-slate-500">No remaining legs added.</div>
+        </div>
+
+        <!-- Empty / error -->
         <div id="emptyState" class="glass-soft rounded-[22px] p-4 text-sm text-slate-400">
-          Enter your stake, payout, and a live input to see the ticket’s estimated value.
+          Enter your bet details to estimate the current value of the ticket.
         </div>
 
         <!-- Results -->
@@ -178,7 +217,7 @@
                 <div id="fairValueBox" class="text-lg font-bold mt-2 text-white">$0.00</div>
               </div>
               <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div class="text-sm text-slate-400">Live probability</div>
+                <div class="text-sm text-slate-400">Win probability</div>
                 <div id="probabilityBox" class="text-lg font-bold mt-2 text-white">0.0%</div>
               </div>
             </div>
@@ -186,19 +225,19 @@
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="glass-soft rounded-[22px] p-4 space-y-3">
-              <div class="text-base font-semibold">What this means</div>
+              <div class="text-base font-semibold">How to read this</div>
               <div class="space-y-3 text-sm text-slate-300">
                 <div>
                   <div class="font-medium text-white">Estimated value</div>
-                  <div>What the ticket is roughly worth right now based on the live chance to win.</div>
+                  <div>What the ticket is roughly worth right now.</div>
                 </div>
                 <div>
                   <div class="font-medium text-white">Offer comparison</div>
-                  <div>Shows whether the book’s cashout is close to that estimate or meaningfully below it.</div>
+                  <div>Shows whether the book’s cashout is close enough to the estimate to be reasonable.</div>
                 </div>
                 <div>
                   <div class="font-medium text-white">Context matters</div>
-                  <div>A small difference can still be reasonable if the convenience is worth it to you.</div>
+                  <div>A small gap can still be fine if the convenience is worth it to you.</div>
                 </div>
               </div>
             </div>
@@ -206,9 +245,9 @@
             <div class="glass-soft rounded-[22px] p-4 space-y-3">
               <div class="text-base font-semibold">EV on cashouts</div>
               <div class="space-y-3 text-sm text-slate-300">
-                <div>Books usually price cashouts below a fair live value estimate.</div>
-                <div>That discount is the cost of convenience and immediate certainty.</div>
-                <div>This tool gives you a reference point before you decide whether to click accept.</div>
+                <div>Cashouts usually come in below fair value because books charge for convenience.</div>
+                <div>This tool gives you a cleaner reference point before you decide.</div>
+                <div>Use it as guidance, not a guarantee.</div>
               </div>
             </div>
           </div>
@@ -229,25 +268,46 @@
   </div>
 
   <script>
-    let liveMode = 'odds';
+    const state = {
+      mode: 'live',
+      liveInputMode: 'odds',
+      remainingLegs: []
+    };
 
     const els = {
       stakeInput: document.getElementById('stakeInput'),
       payoutInput: document.getElementById('payoutInput'),
       cashoutInput: document.getElementById('cashoutInput'),
-      modeOddsBtn: document.getElementById('modeOddsBtn'),
-      modeProbBtn: document.getElementById('modeProbBtn'),
+
+      liveModeBtn: document.getElementById('liveModeBtn'),
+      notLiveModeBtn: document.getElementById('notLiveModeBtn'),
+
+      oddsModeBtn: document.getElementById('oddsModeBtn'),
+      probModeBtn: document.getElementById('probModeBtn'),
+
+      liveInputsWrap: document.getElementById('liveInputsWrap'),
+      notLiveInputsWrap: document.getElementById('notLiveInputsWrap'),
+
       oddsModeWrap: document.getElementById('oddsModeWrap'),
       probModeWrap: document.getElementById('probModeWrap'),
+
       oddsInput: document.getElementById('oddsInput'),
       probInput: document.getElementById('probInput'),
+
+      remainingLegsWrap: document.getElementById('remainingLegsWrap'),
+      remainingLegsEmpty: document.getElementById('remainingLegsEmpty'),
+      addLegBtn: document.getElementById('addLegBtn'),
+
       emptyState: document.getElementById('emptyState'),
       resultsWrap: document.getElementById('resultsWrap'),
+
       mainHeadline: document.getElementById('mainHeadline'),
       subHeadline: document.getElementById('subHeadline'),
+
       comparisonWrap: document.getElementById('comparisonWrap'),
       comparisonLine: document.getElementById('comparisonLine'),
       comparisonSub: document.getElementById('comparisonSub'),
+
       fairValueBox: document.getElementById('fairValueBox'),
       probabilityBox: document.getElementById('probabilityBox')
     };
@@ -274,7 +334,8 @@
         v = v[0] + v.slice(1).replace(/[+-]/g, '');
       }
 
-      if ((v.match(/[+-]/g) || []).length > 1) {
+      const signCount = (v.match(/[+-]/g) || []).length;
+      if (signCount > 1) {
         const first = v[0];
         v = (first === '+' || first === '-') ? first + v.slice(1).replace(/[+-]/g, '') : v.replace(/[+-]/g, '');
       }
@@ -293,37 +354,102 @@
       return Number.isFinite(n) && n !== 0 ? n : null;
     }
 
-    function impliedProbFromOdds(odds) {
+    function americanToImpliedProbability(odds) {
       return odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
     }
 
+    function americanToDecimal(odds) {
+      return odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds);
+    }
+
     function getInputs() {
-      const stake = parseFloat(els.stakeInput.value);
-      const payout = parseFloat(els.payoutInput.value);
-      const cashout = parseFloat(els.cashoutInput.value);
-      return { stake, payout, cashout };
+      return {
+        stake: parseFloat(els.stakeInput.value),
+        payout: parseFloat(els.payoutInput.value),
+        cashout: parseFloat(els.cashoutInput.value),
+        liveOdds: parseAmericanOdds(els.oddsInput.value),
+        probabilityPct: parseFloat(els.probInput.value)
+      };
     }
 
-    function validInputs(stake, payout) {
-      return Number.isFinite(stake) && Number.isFinite(payout) && stake > 0 && payout > stake;
-    }
-
-    function getProbability() {
-      if (liveMode === 'odds') {
-        const odds = parseAmericanOdds(els.oddsInput.value);
-        if (odds === null) return null;
-        return impliedProbFromOdds(odds);
+    function validateBaseInputs(inputs) {
+      if (!Number.isFinite(inputs.stake) || inputs.stake <= 0) {
+        return 'Enter a valid stake greater than $0.';
       }
 
-      const pct = parseFloat(els.probInput.value);
-      if (!Number.isFinite(pct) || pct < 0 || pct > 100) return null;
-      return pct / 100;
+      if (!Number.isFinite(inputs.payout) || inputs.payout <= inputs.stake) {
+        return 'Potential payout must be greater than the original stake.';
+      }
+
+      return null;
     }
 
-    function gradeOffer(fair, offer, stake) {
-      const diff = offer - fair;
-      const shortfall = fair - offer;
-      const pctBelowFair = fair > 0 ? shortfall / fair : 0;
+    function validateLiveInputs(inputs) {
+      if (state.liveInputMode === 'odds' && inputs.liveOdds === null) {
+        return 'Enter valid live hedge odds.';
+      }
+
+      if (state.liveInputMode === 'probability') {
+        if (!Number.isFinite(inputs.probabilityPct) || inputs.probabilityPct < 0 || inputs.probabilityPct > 100) {
+          return 'Enter a win probability between 0 and 100.';
+        }
+      }
+
+      return null;
+    }
+
+    function validateNotLiveInputs() {
+      if (state.remainingLegs.length === 0) {
+        return 'Add at least one remaining leg.';
+      }
+
+      if (state.remainingLegs.some(odds => !Number.isFinite(odds))) {
+        return 'All remaining leg odds must be valid.';
+      }
+
+      return null;
+    }
+
+    function calculateLiveValue(inputs) {
+      let probability;
+
+      if (state.liveInputMode === 'odds') {
+        probability = americanToImpliedProbability(inputs.liveOdds);
+      } else {
+        probability = inputs.probabilityPct / 100;
+      }
+
+      const fairValue = probability * inputs.payout;
+
+      return {
+        probability,
+        fairValue,
+        modelLabel: state.liveInputMode === 'odds'
+          ? 'Based on the live hedge odds you entered.'
+          : 'Based on the win probability you entered.'
+      };
+    }
+
+    function calculateNotLiveValue(inputs) {
+      const probability = state.remainingLegs.reduce((acc, odds) => {
+        return acc * americanToImpliedProbability(odds);
+      }, 1);
+
+      const fairValue = probability * inputs.payout;
+
+      return {
+        probability,
+        fairValue,
+        modelLabel: `Based on ${state.remainingLegs.length} remaining leg${state.remainingLegs.length === 1 ? '' : 's'}.`
+      };
+    }
+
+    function gradeOffer(fairValue, offer, stake) {
+      if (!Number.isFinite(offer) || offer <= 0) return null;
+
+      const diff = offer - fairValue;
+      const shortfall = fairValue - offer;
+      const pctBelowFair = fairValue > 0 ? shortfall / fairValue : 0;
       const stakeMultiple = stake > 0 ? shortfall / stake : 0;
 
       if (diff >= 0) {
@@ -357,53 +483,107 @@
       };
     }
 
-    function setMode(mode) {
-      liveMode = mode;
+    function renderMode() {
+      const isLive = state.mode === 'live';
 
-      const oddsActive = mode === 'odds';
-      els.modeOddsBtn.classList.toggle('active', oddsActive);
-      els.modeProbBtn.classList.toggle('active', !oddsActive);
+      els.liveModeBtn.classList.toggle('active', isLive);
+      els.notLiveModeBtn.classList.toggle('active', !isLive);
+
+      els.liveInputsWrap.classList.toggle('hidden', !isLive);
+      els.notLiveInputsWrap.classList.toggle('hidden', isLive);
+
+      const oddsActive = state.liveInputMode === 'odds';
+      els.oddsModeBtn.classList.toggle('active', oddsActive);
+      els.probModeBtn.classList.toggle('active', !oddsActive);
+
       els.oddsModeWrap.classList.toggle('hidden', !oddsActive);
       els.probModeWrap.classList.toggle('hidden', oddsActive);
-
-      update();
     }
 
-    function update() {
-      const { stake, payout, cashout } = getInputs();
+    function renderRemainingLegs() {
+      els.remainingLegsWrap.innerHTML = '';
 
-      if (!validInputs(stake, payout)) {
-        els.emptyState.classList.remove('hidden');
-        els.resultsWrap.classList.add('hidden');
+      if (state.remainingLegs.length === 0) {
+        els.remainingLegsEmpty.classList.remove('hidden');
         return;
       }
 
-      const probability = getProbability();
+      els.remainingLegsEmpty.classList.add('hidden');
 
-      if (probability === null) {
-        els.emptyState.classList.remove('hidden');
-        els.resultsWrap.classList.add('hidden');
-        return;
-      }
+      state.remainingLegs.forEach((odds, index) => {
+        const row = document.createElement('div');
+        row.className = 'leg-row flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3';
 
-      const fairValue = probability * payout;
+        row.innerHTML = `
+          <div class="text-xs text-slate-400 w-14 shrink-0">Leg ${index + 1}</div>
+          <input
+            value="${odds > 0 ? '+' + odds : odds}"
+            class="flex-1 h-10 rounded-xl border border-white/10 bg-slate-950/50 px-3 text-white"
+            inputmode="text"
+          />
+          <button
+            type="button"
+            class="h-10 px-3 rounded-xl border border-white/10 bg-white/5 text-rose-300 hover:bg-white/10"
+            aria-label="Remove leg"
+          >
+            ✕
+          </button>
+        `;
 
+        const input = row.querySelector('input');
+        const removeBtn = row.querySelector('button');
+
+        input.addEventListener('input', (e) => {
+          const sanitized = sanitizeOddsInput(e.target.value);
+          e.target.value = sanitized;
+          const parsed = parseAmericanOdds(sanitized);
+          if (parsed !== null) {
+            state.remainingLegs[index] = parsed;
+          }
+          update();
+        });
+
+        input.addEventListener('blur', (e) => {
+          const parsed = parseAmericanOdds(e.target.value);
+          if (parsed === null) {
+            e.target.value = state.remainingLegs[index] > 0 ? `+${state.remainingLegs[index]}` : `${state.remainingLegs[index]}`;
+          } else {
+            state.remainingLegs[index] = parsed;
+            e.target.value = parsed > 0 ? `+${parsed}` : `${parsed}`;
+          }
+          update();
+        });
+
+        removeBtn.addEventListener('click', () => {
+          state.remainingLegs.splice(index, 1);
+          renderRemainingLegs();
+          update();
+        });
+
+        els.remainingLegsWrap.appendChild(row);
+      });
+    }
+
+    function renderEmpty(message) {
+      els.emptyState.textContent = message;
+      els.emptyState.classList.remove('hidden');
+      els.resultsWrap.classList.add('hidden');
+    }
+
+    function renderResult(result, grade) {
       els.emptyState.classList.add('hidden');
       els.resultsWrap.classList.remove('hidden');
 
-      els.mainHeadline.textContent = `Estimated value ≈ ${formatMoney(fairValue)}`;
-      els.subHeadline.textContent = liveMode === 'odds'
-        ? 'Based on the live hedge odds you entered.'
-        : 'Based on the win probability you entered.';
-      els.fairValueBox.textContent = formatMoney(fairValue);
-      els.probabilityBox.textContent = formatPercent(probability);
+      els.mainHeadline.textContent = `Estimated value ≈ ${formatMoney(result.fairValue)}`;
+      els.subHeadline.textContent = result.modelLabel;
+      els.fairValueBox.textContent = formatMoney(result.fairValue);
+      els.probabilityBox.textContent = formatPercent(result.probability);
 
-      if (Number.isFinite(cashout) && cashout > 0) {
-        const graded = gradeOffer(fairValue, cashout, stake);
+      if (grade) {
         els.comparisonWrap.classList.remove('hidden');
-        els.comparisonLine.className = `text-lg font-bold mt-2 ${graded.tone}`;
-        els.comparisonLine.textContent = graded.line;
-        els.comparisonSub.textContent = graded.sub;
+        els.comparisonLine.className = `text-lg font-bold mt-2 ${grade.tone}`;
+        els.comparisonLine.textContent = grade.line;
+        els.comparisonSub.textContent = grade.sub;
       } else {
         els.comparisonWrap.classList.add('hidden');
         els.comparisonLine.textContent = '';
@@ -411,8 +591,63 @@
       }
     }
 
-    els.modeOddsBtn.addEventListener('click', () => setMode('odds'));
-    els.modeProbBtn.addEventListener('click', () => setMode('probability'));
+    function update() {
+      const inputs = getInputs();
+
+      const baseError = validateBaseInputs(inputs);
+      if (baseError) {
+        renderEmpty(baseError);
+        return;
+      }
+
+      let modeError = null;
+      let result = null;
+
+      if (state.mode === 'live') {
+        modeError = validateLiveInputs(inputs);
+        if (!modeError) {
+          result = calculateLiveValue(inputs);
+        }
+      } else {
+        modeError = validateNotLiveInputs();
+        if (!modeError) {
+          result = calculateNotLiveValue(inputs);
+        }
+      }
+
+      if (modeError) {
+        renderEmpty(modeError);
+        return;
+      }
+
+      const grade = gradeOffer(result.fairValue, inputs.cashout, inputs.stake);
+      renderResult(result, grade);
+    }
+
+    // Event wiring
+    els.liveModeBtn.addEventListener('click', () => {
+      state.mode = 'live';
+      renderMode();
+      update();
+    });
+
+    els.notLiveModeBtn.addEventListener('click', () => {
+      state.mode = 'notLive';
+      renderMode();
+      update();
+    });
+
+    els.oddsModeBtn.addEventListener('click', () => {
+      state.liveInputMode = 'odds';
+      renderMode();
+      update();
+    });
+
+    els.probModeBtn.addEventListener('click', () => {
+      state.liveInputMode = 'probability';
+      renderMode();
+      update();
+    });
 
     els.stakeInput.addEventListener('input', update);
     els.payoutInput.addEventListener('input', update);
@@ -425,7 +660,15 @@
 
     els.probInput.addEventListener('input', update);
 
-    setMode('odds');
+    els.addLegBtn.addEventListener('click', () => {
+      state.remainingLegs.push(-110);
+      renderRemainingLegs();
+      update();
+    });
+
+    renderMode();
+    renderRemainingLegs();
+    renderEmpty('Enter your bet details to estimate the current value of the ticket.');
   </script>
 </body>
 </html>
