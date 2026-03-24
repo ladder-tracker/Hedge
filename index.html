@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Should I Cash Out?</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <style>
-    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
     .bg-app {
       background:
         radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 28%),
@@ -26,31 +27,14 @@
       border: 1px solid rgba(148, 163, 184, 0.10);
       box-shadow: 0 12px 30px rgba(0,0,0,0.22);
     }
-    .share-gradient {
-      background:
-        radial-gradient(circle at top left, rgba(56,189,248,0.28), transparent 32%),
-        radial-gradient(circle at top right, rgba(192,132,252,0.28), transparent 36%),
-        linear-gradient(180deg, #0b1220 0%, #101827 100%);
-    }
-    .scenario-btn {
+    .mode-btn {
       transition: 180ms ease;
     }
-    .scenario-btn.active {
+    .mode-btn.active {
       border-color: rgba(56, 189, 248, 0.95);
       box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35) inset;
       background: rgba(30, 41, 59, 0.95);
-      transform: translateY(-1px);
-    }
-    .leg-chip {
-      transition: 160ms ease;
-    }
-    .toast-in {
-      animation: toastInOut 1800ms ease forwards;
-    }
-    @keyframes toastInOut {
-      0% { opacity: 0; transform: translateY(10px); }
-      10%, 85% { opacity: 1; transform: translateY(0); }
-      100% { opacity: 0; transform: translateY(10px); }
+      color: white;
     }
   </style>
 </head>
@@ -59,15 +43,16 @@
     <div class="glass rounded-[28px] overflow-hidden">
       <div class="p-5 md:p-6 border-b border-white/10">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-sky-400/20 bg-sky-400/10 text-sky-200 text-[11px] uppercase tracking-[0.25em]">
-          Bet Decision Tool
+          Live Bet Decision Tool
         </div>
         <h1 class="text-2xl md:text-4xl font-bold mt-3">Should I Cash Out?</h1>
         <p class="text-sm md:text-base text-slate-300 mt-2 max-w-2xl">
-          Estimate fair value from your payout and any remaining legs. Compare it to a live cashout offer and generate a clean share card.
+          Enter your stake, payout, and either live hedge odds or your estimated win probability. The tool estimates what the ticket is worth right now and how the cashout offer compares.
         </p>
       </div>
 
       <div class="p-4 md:p-6 space-y-4">
+        <!-- Bet Info -->
         <div class="glass-soft rounded-[22px] p-4 space-y-4">
           <div class="text-base font-semibold">Your Bet</div>
 
@@ -79,7 +64,7 @@
               inputmode="decimal"
               min="0"
               step="0.01"
-              placeholder="10"
+              placeholder="25"
               class="w-full h-12 rounded-2xl border border-white/10 bg-slate-950/50 px-4 text-white placeholder:text-slate-500"
             />
           </div>
@@ -101,53 +86,88 @@
           </div>
 
           <div>
-            <label class="block text-sm font-medium mb-2 text-slate-300">Current cashout offer <span class="text-slate-500">(optional)</span></label>
+            <label class="block text-sm font-medium mb-2 text-slate-300">Cashout offer <span class="text-slate-500">(optional)</span></label>
             <input
               id="cashoutInput"
               type="number"
               inputmode="decimal"
               min="0"
               step="0.01"
-              placeholder="620"
+              placeholder="1200"
               class="w-full h-12 rounded-2xl border border-white/10 bg-slate-950/50 px-4 text-white placeholder:text-slate-500"
             />
           </div>
         </div>
 
+        <!-- Live input mode -->
         <div class="glass-soft rounded-[22px] p-4 space-y-4">
-          <div class="flex items-center justify-between gap-3">
-            <div class="text-base font-semibold">Remaining Legs</div>
+          <div class="text-base font-semibold">Live Value Input</div>
+
+          <div class="grid grid-cols-2 gap-3">
             <button
-              id="addLegBtn"
+              id="modeOddsBtn"
               type="button"
-              class="h-10 px-4 rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-200 text-sm font-medium hover:bg-sky-400/15"
+              class="mode-btn active h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium"
             >
-              + Add leg
+              Live Hedge Odds
+            </button>
+            <button
+              id="modeProbBtn"
+              type="button"
+              class="mode-btn h-11 rounded-2xl border border-white/10 bg-white/5 text-slate-300 font-medium"
+            >
+              Win Probability %
             </button>
           </div>
 
-          <div class="text-xs text-slate-400">
-            Leave this empty if you just want the hedge-based baseline. Add remaining legs for a better live ticket estimate.
+          <div id="oddsModeWrap">
+            <label class="block text-sm font-medium mb-2 text-slate-300">Current live hedge odds</label>
+            <input
+              id="oddsInput"
+              type="text"
+              inputmode="numeric"
+              placeholder="-500"
+              class="w-full h-12 rounded-2xl border border-white/10 bg-slate-950/50 px-4 text-white placeholder:text-slate-500"
+            />
+            <div class="text-xs text-slate-400 mt-2">
+              Use the current live price you could hedge at right now.
+            </div>
           </div>
 
-          <div id="legsEmpty" class="text-sm text-slate-500">No remaining legs added.</div>
-          <div id="legsWrap" class="flex flex-wrap gap-2"></div>
+          <div id="probModeWrap" class="hidden">
+            <label class="block text-sm font-medium mb-2 text-slate-300">Estimated chance to win (%)</label>
+            <input
+              id="probInput"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              max="100"
+              step="0.1"
+              placeholder="83"
+              class="w-full h-12 rounded-2xl border border-white/10 bg-slate-950/50 px-4 text-white placeholder:text-slate-500"
+            />
+            <div class="text-xs text-slate-400 mt-2">
+              Enter your estimate of the bet winning from this point forward.
+            </div>
+          </div>
         </div>
 
+        <!-- Empty -->
         <div id="emptyState" class="glass-soft rounded-[22px] p-4 text-sm text-slate-400">
-          Enter your stake and payout to see cashout guidance.
+          Enter your stake, payout, and a live input to see the ticket’s estimated value.
         </div>
 
+        <!-- Results -->
         <div id="resultsWrap" class="hidden space-y-4">
           <div class="glass-soft rounded-[22px] p-4 space-y-4">
             <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div class="text-sm text-slate-400">Main view</div>
-              <div id="mainHeadline" class="text-2xl md:text-3xl font-black mt-2 text-white"></div>
-              <div id="subHeadline" class="text-sm text-slate-300 mt-2"></div>
+              <div class="text-sm text-slate-400">Estimated value</div>
+              <div id="mainHeadline" class="text-2xl md:text-3xl font-black mt-2 text-white">$0.00</div>
+              <div id="subHeadline" class="text-sm text-slate-300 mt-2">Based on live probability.</div>
             </div>
 
             <div id="comparisonWrap" class="hidden rounded-2xl border border-white/10 bg-white/5 p-4">
-              <div class="text-sm text-slate-400">Current cashout offer</div>
+              <div class="text-sm text-slate-400">Cashout offer</div>
               <div id="comparisonLine" class="text-lg font-bold mt-2 text-white"></div>
               <div id="comparisonSub" class="text-sm text-slate-300 mt-2"></div>
             </div>
@@ -158,35 +178,27 @@
                 <div id="fairValueBox" class="text-lg font-bold mt-2 text-white">$0.00</div>
               </div>
               <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <div class="text-sm text-slate-400">Model</div>
-                <div id="modelBox" class="text-lg font-bold mt-2 text-white">Hedge baseline</div>
+                <div class="text-sm text-slate-400">Live probability</div>
+                <div id="probabilityBox" class="text-lg font-bold mt-2 text-white">0.0%</div>
               </div>
             </div>
           </div>
 
-          <div class="glass-soft rounded-[22px] p-4 space-y-3">
-            <div class="flex items-center justify-between gap-3">
-              <div class="text-base font-semibold">Scenario lines</div>
-              <div class="text-xs text-slate-400">Tap to compare</div>
-            </div>
-            <div id="scenarioGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
-          </div>
-
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="glass-soft rounded-[22px] p-4 space-y-3">
-              <div class="text-base font-semibold">How to read this</div>
+              <div class="text-base font-semibold">What this means</div>
               <div class="space-y-3 text-sm text-slate-300">
                 <div>
-                  <div class="font-medium text-white">Fair value</div>
-                  <div>The estimated value of your live ticket right now.</div>
+                  <div class="font-medium text-white">Estimated value</div>
+                  <div>What the ticket is roughly worth right now based on the live chance to win.</div>
                 </div>
                 <div>
-                  <div class="font-medium text-white">Cashout comparison</div>
-                  <div>Shows how far the book’s offer is above or below that estimate.</div>
+                  <div class="font-medium text-white">Offer comparison</div>
+                  <div>Shows whether the book’s cashout is close to that estimate or meaningfully below it.</div>
                 </div>
                 <div>
-                  <div class="font-medium text-white">Scenario lines</div>
-                  <div>Useful when you want a hedge-style reference instead of just the fair value number.</div>
+                  <div class="font-medium text-white">Context matters</div>
+                  <div>A small difference can still be reasonable if the convenience is worth it to you.</div>
                 </div>
               </div>
             </div>
@@ -194,26 +206,11 @@
             <div class="glass-soft rounded-[22px] p-4 space-y-3">
               <div class="text-base font-semibold">EV on cashouts</div>
               <div class="space-y-3 text-sm text-slate-300">
-                <div>Books usually price cashouts below what a fair exit would imply.</div>
-                <div>That discount is the convenience premium you pay for getting out instantly.</div>
-                <div>This tool gives you a cleaner reference point before you click accept.</div>
+                <div>Books usually price cashouts below a fair live value estimate.</div>
+                <div>That discount is the cost of convenience and immediate certainty.</div>
+                <div>This tool gives you a reference point before you decide whether to click accept.</div>
               </div>
             </div>
-          </div>
-
-          <div class="glass-soft rounded-[22px] p-4 space-y-3">
-            <div class="flex items-center justify-between gap-3">
-              <div class="text-base font-semibold">Share</div>
-              <div class="text-xs text-slate-400">PNG</div>
-            </div>
-            <div class="text-sm text-slate-300">Generate a clean card for Reddit, X, or group chats.</div>
-            <button
-              id="shareBtn"
-              type="button"
-              class="w-full h-11 rounded-2xl bg-sky-500 text-slate-950 font-semibold hover:bg-sky-400"
-            >
-              Share Result
-            </button>
           </div>
 
           <div class="pt-1 text-center">
@@ -231,80 +228,19 @@
     </div>
   </div>
 
-  <div id="toast" class="hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-50"></div>
-
-  <div id="shareRenderWrap" class="fixed -left-[9999px] top-0 z-[-1]">
-    <div id="shareCard" class="w-[430px] rounded-[28px] overflow-hidden border border-white/10 share-gradient shadow-2xl text-slate-100">
-      <div class="px-6 py-5 border-b border-white/10">
-        <div class="flex items-center justify-between gap-3">
-          <div class="min-w-0">
-            <div class="text-xs uppercase tracking-[0.25em] text-slate-400">Should I Cash Out?</div>
-            <div class="text-3xl font-bold mt-2 text-white break-words">Cashout Check 👀</div>
-          </div>
-          <div class="rounded-2xl bg-white/10 px-3 py-2 text-2xl shrink-0">💸</div>
-        </div>
-      </div>
-
-      <div class="p-6 space-y-5">
-        <div class="rounded-2xl border border-white/10 bg-white/5 p-5 text-center">
-          <div class="text-sm text-slate-400">Estimated fair value</div>
-          <div id="shareFairValue" class="text-4xl font-black mt-2 text-white">$0.00</div>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div class="text-sm text-slate-400">Cashout offer</div>
-          <div id="shareOfferLine" class="text-xl font-bold mt-2 text-white">No offer entered</div>
-          <div id="shareOfferSub" class="text-sm text-slate-300 mt-2">Compare your book’s number to the fair value.</div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-3 text-center items-center">
-          <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div class="text-xs text-slate-400">Stake</div>
-            <div id="shareStake" class="font-semibold text-lg text-white break-words">$10.00</div>
-          </div>
-          <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div class="text-xs text-slate-400">Payout</div>
-            <div id="sharePayout" class="font-semibold text-lg text-white break-words">$1500.00</div>
-          </div>
-          <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div class="text-xs text-slate-400">Model</div>
-            <div id="shareModel" class="font-semibold text-lg text-white break-words">Legs</div>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-white/5 p-4 space-y-3">
-          <div class="flex items-center justify-between gap-3">
-            <div class="text-sm text-slate-400">Remaining legs</div>
-            <div class="text-xs text-slate-500">Live state</div>
-          </div>
-          <div id="shareLegs" class="space-y-2 text-white"></div>
-        </div>
-
-        <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div class="text-sm text-slate-400">Reference line</div>
-          <div id="shareScenario" class="font-semibold text-base break-words text-white mt-1">At -110: hedge $0.00</div>
-        </div>
-
-        <div class="text-center pt-1">
-          <div id="shareVerdict" class="text-xl font-bold text-white">Worth cashing?</div>
-          <div class="text-sm text-slate-400 mt-1">Check the gap before you click accept</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    const scenarioOdds = [-200, -110, 100];
-    let selectedOdds = -110;
-    let legs = [];
+    let liveMode = 'odds';
 
     const els = {
       stakeInput: document.getElementById('stakeInput'),
       payoutInput: document.getElementById('payoutInput'),
       cashoutInput: document.getElementById('cashoutInput'),
-      addLegBtn: document.getElementById('addLegBtn'),
-      legsEmpty: document.getElementById('legsEmpty'),
-      legsWrap: document.getElementById('legsWrap'),
+      modeOddsBtn: document.getElementById('modeOddsBtn'),
+      modeProbBtn: document.getElementById('modeProbBtn'),
+      oddsModeWrap: document.getElementById('oddsModeWrap'),
+      probModeWrap: document.getElementById('probModeWrap'),
+      oddsInput: document.getElementById('oddsInput'),
+      probInput: document.getElementById('probInput'),
       emptyState: document.getElementById('emptyState'),
       resultsWrap: document.getElementById('resultsWrap'),
       mainHeadline: document.getElementById('mainHeadline'),
@@ -313,20 +249,7 @@
       comparisonLine: document.getElementById('comparisonLine'),
       comparisonSub: document.getElementById('comparisonSub'),
       fairValueBox: document.getElementById('fairValueBox'),
-      modelBox: document.getElementById('modelBox'),
-      scenarioGrid: document.getElementById('scenarioGrid'),
-      shareBtn: document.getElementById('shareBtn'),
-      toast: document.getElementById('toast'),
-      shareFairValue: document.getElementById('shareFairValue'),
-      shareOfferLine: document.getElementById('shareOfferLine'),
-      shareOfferSub: document.getElementById('shareOfferSub'),
-      shareStake: document.getElementById('shareStake'),
-      sharePayout: document.getElementById('sharePayout'),
-      shareModel: document.getElementById('shareModel'),
-      shareLegs: document.getElementById('shareLegs'),
-      shareScenario: document.getElementById('shareScenario'),
-      shareVerdict: document.getElementById('shareVerdict'),
-      shareCard: document.getElementById('shareCard')
+      probabilityBox: document.getElementById('probabilityBox')
     };
 
     function formatMoney(n) {
@@ -338,16 +261,8 @@
       }).format(Number(n || 0));
     }
 
-    function formatOdds(odds) {
-      return odds > 0 ? `+${odds}` : `${odds}`;
-    }
-
-    function toDecimal(odds) {
-      return odds > 0 ? 1 + odds / 100 : 1 + 100 / Math.abs(odds);
-    }
-
-    function impliedProb(odds) {
-      return odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
+    function formatPercent(n) {
+      return `${(Number(n || 0) * 100).toFixed(1)}%`;
     }
 
     function sanitizeOddsInput(value) {
@@ -378,34 +293,8 @@
       return Number.isFinite(n) && n !== 0 ? n : null;
     }
 
-    function hedgeScenario(stake, payout, odds) {
-      const d = toDecimal(odds);
-      const hedge = payout / d;
-      const win = payout - hedge - stake;
-      const hedgeWin = hedge * (d - 1) - stake;
-      const locked = Math.min(win, hedgeWin);
-      const fairCashout = stake + locked;
-
-      return {
-        odds,
-        hedge,
-        locked,
-        fairCashout,
-        win,
-        hedgeWin
-      };
-    }
-
-    function probabilityModel(payout, remainingLegs) {
-      let q = 1;
-      remainingLegs.forEach(odds => {
-        q *= impliedProb(odds);
-      });
-
-      return {
-        combinedProb: q,
-        fairValue: q * payout
-      };
+    function impliedProbFromOdds(odds) {
+      return odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
     }
 
     function getInputs() {
@@ -419,230 +308,65 @@
       return Number.isFinite(stake) && Number.isFinite(payout) && stake > 0 && payout > stake;
     }
 
-    function currentModel(stake, payout) {
-      if (legs.length > 0) {
-        const probData = probabilityModel(payout, legs);
+    function getProbability() {
+      if (liveMode === 'odds') {
+        const odds = parseAmericanOdds(els.oddsInput.value);
+        if (odds === null) return null;
+        return impliedProbFromOdds(odds);
+      }
+
+      const pct = parseFloat(els.probInput.value);
+      if (!Number.isFinite(pct) || pct < 0 || pct > 100) return null;
+      return pct / 100;
+    }
+
+    function gradeOffer(fair, offer, stake) {
+      const diff = offer - fair;
+      const shortfall = fair - offer;
+      const pctBelowFair = fair > 0 ? shortfall / fair : 0;
+      const stakeMultiple = stake > 0 ? shortfall / stake : 0;
+
+      if (diff >= 0) {
         return {
-          type: 'legs',
-          fairValue: probData.fairValue,
-          combinedProb: probData.combinedProb
+          tone: 'text-emerald-300',
+          line: `Offer ${formatMoney(offer)} → Strong offer (+${formatMoney(diff)})`,
+          sub: 'This offer is at or above the estimated value.'
         };
       }
 
-      const hedgeData = hedgeScenario(stake, payout, -110);
+      if (pctBelowFair <= 0.03 || stakeMultiple < 0.5) {
+        return {
+          tone: 'text-emerald-300',
+          line: `Offer ${formatMoney(offer)} → Close to fair`,
+          sub: `${formatMoney(shortfall)} below fair, but within a reasonable range.`
+        };
+      }
+
+      if (pctBelowFair <= 0.08 || stakeMultiple < 1) {
+        return {
+          tone: 'text-amber-300',
+          line: `Offer ${formatMoney(offer)} → Slightly below fair, but reasonable`,
+          sub: `${formatMoney(shortfall)} below fair. You're giving up some value, but not a brutal amount.`
+        };
+      }
+
       return {
-        type: 'hedge',
-        fairValue: hedgeData.fairCashout,
-        hedgeData
+        tone: 'text-rose-300',
+        line: `Offer ${formatMoney(offer)} → Meaningfully below fair`,
+        sub: `${formatMoney(shortfall)} below fair. This is a weak cashout relative to the estimate.`
       };
     }
 
-    function showToast(text) {
-      els.toast.innerHTML = `
-        <div class="glass rounded-2xl px-4 py-3 text-sm text-white toast-in">
-          ${text}
-        </div>
-      `;
-      els.toast.classList.remove('hidden');
-      setTimeout(() => {
-        els.toast.classList.add('hidden');
-        els.toast.innerHTML = '';
-      }, 1800);
-    }
+    function setMode(mode) {
+      liveMode = mode;
 
-    function renderLegs() {
-      els.legsWrap.innerHTML = '';
+      const oddsActive = mode === 'odds';
+      els.modeOddsBtn.classList.toggle('active', oddsActive);
+      els.modeProbBtn.classList.toggle('active', !oddsActive);
+      els.oddsModeWrap.classList.toggle('hidden', !oddsActive);
+      els.probModeWrap.classList.toggle('hidden', oddsActive);
 
-      if (legs.length === 0) {
-        els.legsEmpty.classList.remove('hidden');
-        return;
-      }
-
-      els.legsEmpty.classList.add('hidden');
-
-      legs.forEach((odds, i) => {
-        const chip = document.createElement('div');
-        chip.className = 'leg-chip flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2';
-        chip.innerHTML = `
-          <input
-            value="${formatOdds(odds)}"
-            class="bg-transparent text-white text-sm font-medium w-20 outline-none"
-            inputmode="numeric"
-          />
-          <button
-            type="button"
-            class="text-rose-300 text-sm hover:text-rose-200"
-            aria-label="Remove leg"
-          >
-            ✕
-          </button>
-        `;
-
-        const input = chip.querySelector('input');
-        const remove = chip.querySelector('button');
-
-        input.addEventListener('input', (e) => {
-          const sanitized = sanitizeOddsInput(e.target.value);
-          e.target.value = sanitized;
-          const parsed = parseAmericanOdds(sanitized);
-          if (parsed !== null) {
-            legs[i] = parsed;
-            update();
-          }
-        });
-
-        input.addEventListener('blur', (e) => {
-          const parsed = parseAmericanOdds(e.target.value);
-          if (parsed === null) {
-            e.target.value = formatOdds(legs[i]);
-          } else {
-            e.target.value = formatOdds(parsed);
-          }
-        });
-
-        remove.addEventListener('click', () => {
-          legs.splice(i, 1);
-          renderLegs();
-          update();
-        });
-
-        els.legsWrap.appendChild(chip);
-      });
-    }
-
-    function renderScenarioCards(stake, payout) {
-      els.scenarioGrid.innerHTML = '';
-
-      scenarioOdds.forEach(odds => {
-        const data = hedgeScenario(stake, payout, odds);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = `scenario-btn text-left rounded-2xl border p-4 ${
-          odds === selectedOdds
-            ? 'active border-sky-400 bg-slate-800/90'
-            : 'border-white/10 bg-white/5 hover:bg-white/10'
-        }`;
-
-        btn.innerHTML = `
-          <div class="text-lg font-bold text-white">${formatOdds(odds)}</div>
-          <div class="text-sm text-slate-400 mt-2">Fair cashout</div>
-          <div class="text-xl font-semibold text-white mt-1">${formatMoney(data.fairCashout)}</div>
-          <div class="text-sm text-slate-400 mt-3">Hedge</div>
-          <div class="text-lg font-semibold text-emerald-300 mt-1">${formatMoney(data.hedge)}</div>
-        `;
-
-        btn.addEventListener('click', () => {
-          selectedOdds = odds;
-          update();
-        });
-
-        els.scenarioGrid.appendChild(btn);
-      });
-    }
-
-    function renderMainResult(stake, payout, cashout) {
-      const model = currentModel(stake, payout);
-      const selectedScenario = hedgeScenario(stake, payout, selectedOdds);
-
-      els.fairValueBox.textContent = formatMoney(model.fairValue);
-
-      if (model.type === 'legs') {
-        els.mainHeadline.textContent = `Estimated fair value ≈ ${formatMoney(model.fairValue)}`;
-        els.subHeadline.textContent = `Based on ${legs.length} remaining leg${legs.length === 1 ? '' : 's'} and implied probability.`;
-        els.modelBox.textContent = 'Remaining legs';
-      } else {
-        els.mainHeadline.textContent = `Fair cashout ≈ ${formatMoney(model.fairValue)}`;
-        els.subHeadline.textContent = 'Cashout should be around this range to be fair.';
-        els.modelBox.textContent = 'Hedge baseline';
-      }
-
-      if (Number.isFinite(cashout) && cashout > 0) {
-        const diff = cashout - model.fairValue;
-        els.comparisonWrap.classList.remove('hidden');
-
-        if (diff >= 0) {
-          els.comparisonLine.innerHTML = `Offer ${formatMoney(cashout)} → <span class="text-emerald-300">Above fair by ${formatMoney(diff)}</span>`;
-          els.comparisonSub.textContent = 'This offer is at or above the model estimate.';
-        } else {
-          els.comparisonLine.innerHTML = `Offer ${formatMoney(cashout)} → <span class="text-rose-300">Below fair by ${formatMoney(Math.abs(diff))}</span>`;
-          els.comparisonSub.textContent = 'This offer is below the model estimate.';
-        }
-      } else {
-        els.comparisonWrap.classList.add('hidden');
-        els.comparisonLine.textContent = '';
-        els.comparisonSub.textContent = '';
-      }
-
-      renderScenarioCards(stake, payout);
-
-      return { model, selectedScenario };
-    }
-
-    function renderShareCard(stake, payout, cashout, model, selectedScenario) {
-      els.shareFairValue.textContent = formatMoney(model.fairValue);
-      els.shareStake.textContent = formatMoney(stake);
-      els.sharePayout.textContent = formatMoney(payout);
-      els.shareModel.textContent = model.type === 'legs' ? 'Legs' : 'Hedge';
-
-      if (Number.isFinite(cashout) && cashout > 0) {
-        const diff = cashout - model.fairValue;
-
-        if (diff >= 0) {
-          els.shareOfferLine.textContent = `${formatMoney(cashout)} offer`;
-          els.shareOfferSub.textContent = `Above fair by ${formatMoney(diff)}`;
-          els.shareVerdict.textContent = 'Offer looks strong';
-        } else {
-          els.shareOfferLine.textContent = `${formatMoney(cashout)} offer`;
-          els.shareOfferSub.textContent = `Below fair by ${formatMoney(Math.abs(diff))}`;
-          els.shareVerdict.textContent = 'Offer looks weak';
-        }
-      } else {
-        els.shareOfferLine.textContent = 'No offer entered';
-        els.shareOfferSub.textContent = 'Compare your book’s number to the fair value.';
-        els.shareVerdict.textContent = 'Check the gap before you click accept';
-      }
-
-      if (legs.length === 0) {
-        els.shareLegs.innerHTML = `<div class="text-sm text-slate-500">No remaining legs added.</div>`;
-      } else {
-        els.shareLegs.innerHTML = legs.map((odds, i) => `
-          <div class="rounded-2xl bg-white/5 p-3 border border-white/10 text-base font-semibold">
-            Leg ${i + 1}: ${formatOdds(odds)}
-          </div>
-        `).join('');
-      }
-
-      els.shareScenario.textContent = `At ${formatOdds(selectedScenario.odds)}: hedge ${formatMoney(selectedScenario.hedge)} → fair cashout ${formatMoney(selectedScenario.fairCashout)}`;
-    }
-
-    async function handleShare() {
-      const { stake, payout, cashout } = getInputs();
-
-      if (!validInputs(stake, payout)) {
-        showToast('Enter stake and payout first');
-        return;
-      }
-
-      const { model, selectedScenario } = renderMainResult(stake, payout, cashout);
-      renderShareCard(stake, payout, cashout, model, selectedScenario);
-
-      try {
-        const canvas = await html2canvas(els.shareCard, {
-          backgroundColor: null,
-          scale: window.innerWidth < 768 ? 1.5 : 2,
-          useCORS: true,
-          logging: false
-        });
-
-        const link = document.createElement('a');
-        link.download = 'cashout-check.png';
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        showToast('Shared');
-      } catch (error) {
-        console.error(error);
-        showToast('Share failed');
-      }
+      update();
     }
 
     function update() {
@@ -654,26 +378,54 @@
         return;
       }
 
+      const probability = getProbability();
+
+      if (probability === null) {
+        els.emptyState.classList.remove('hidden');
+        els.resultsWrap.classList.add('hidden');
+        return;
+      }
+
+      const fairValue = probability * payout;
+
       els.emptyState.classList.add('hidden');
       els.resultsWrap.classList.remove('hidden');
 
-      const { model, selectedScenario } = renderMainResult(stake, payout, cashout);
-      renderShareCard(stake, payout, cashout, model, selectedScenario);
+      els.mainHeadline.textContent = `Estimated value ≈ ${formatMoney(fairValue)}`;
+      els.subHeadline.textContent = liveMode === 'odds'
+        ? 'Based on the live hedge odds you entered.'
+        : 'Based on the win probability you entered.';
+      els.fairValueBox.textContent = formatMoney(fairValue);
+      els.probabilityBox.textContent = formatPercent(probability);
+
+      if (Number.isFinite(cashout) && cashout > 0) {
+        const graded = gradeOffer(fairValue, cashout, stake);
+        els.comparisonWrap.classList.remove('hidden');
+        els.comparisonLine.className = `text-lg font-bold mt-2 ${graded.tone}`;
+        els.comparisonLine.textContent = graded.line;
+        els.comparisonSub.textContent = graded.sub;
+      } else {
+        els.comparisonWrap.classList.add('hidden');
+        els.comparisonLine.textContent = '';
+        els.comparisonSub.textContent = '';
+      }
     }
 
-    els.addLegBtn.addEventListener('click', () => {
-      legs.push(-110);
-      renderLegs();
-      update();
-    });
+    els.modeOddsBtn.addEventListener('click', () => setMode('odds'));
+    els.modeProbBtn.addEventListener('click', () => setMode('probability'));
 
     els.stakeInput.addEventListener('input', update);
     els.payoutInput.addEventListener('input', update);
     els.cashoutInput.addEventListener('input', update);
-    els.shareBtn.addEventListener('click', handleShare);
 
-    renderLegs();
-    update();
+    els.oddsInput.addEventListener('input', (e) => {
+      e.target.value = sanitizeOddsInput(e.target.value);
+      update();
+    });
+
+    els.probInput.addEventListener('input', update);
+
+    setMode('odds');
   </script>
 </body>
 </html>
