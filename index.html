@@ -5,184 +5,359 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Should I Cash Out?</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(168,85,247,0.12), transparent 30%),
+        linear-gradient(180deg, #08111f 0%, #0b1324 45%, #0f172a 100%);
+    }
+  </style>
 </head>
-
-<body class="bg-slate-900 text-white min-h-screen p-4">
-  <div class="max-w-xl mx-auto space-y-4">
-
-    <h1 class="text-2xl font-bold">Should I Cash Out?</h1>
-
-    <!-- Bet Info -->
-    <div class="space-y-3">
-      <input id="stakeInput" placeholder="Stake ($25)" class="w-full p-3 rounded bg-slate-800"/>
-      <input id="payoutInput" placeholder="Payout ($1500)" class="w-full p-3 rounded bg-slate-800"/>
-      <input id="cashoutInput" placeholder="Cashout (optional)" class="w-full p-3 rounded bg-slate-800"/>
+<body class="text-white min-h-screen p-4">
+  <div class="max-w-xl mx-auto space-y-4 pb-10">
+    <div class="pt-2">
+      <h1 class="text-3xl font-bold tracking-tight">Should I Cash Out?</h1>
+      <p class="text-slate-300 mt-2 text-sm">Fast live estimate for whether the cashout is worth taking.</p>
     </div>
 
-    <!-- Mode -->
-    <div class="flex gap-2">
-      <button id="liveModeBtn" class="flex-1 p-3 bg-blue-600 rounded">Live</button>
-      <button id="notLiveModeBtn" class="flex-1 p-3 bg-slate-700 rounded">Not Live</button>
-    </div>
-
-    <!-- Live Inputs -->
-    <div id="liveWrap" class="space-y-3">
-      <div class="flex gap-2">
-        <button id="oddsModeBtn" class="flex-1 p-2 bg-green-600 rounded">Odds</button>
-        <button id="probModeBtn" class="flex-1 p-2 bg-slate-700 rounded">%</button>
+    <div class="rounded-3xl bg-slate-900/70 border border-white/10 shadow-2xl p-4 space-y-4">
+      <div class="space-y-3">
+        <input id="stake" inputmode="decimal" placeholder="Stake ($15)" class="w-full p-4 rounded-2xl bg-slate-800/90 border border-white/5 outline-none text-xl placeholder:text-slate-400" />
+        <input id="payout" inputmode="decimal" placeholder="Payout ($104.95)" class="w-full p-4 rounded-2xl bg-slate-800/90 border border-white/5 outline-none text-xl placeholder:text-slate-400" />
+        <input id="cash" inputmode="decimal" placeholder="Cashout (optional)" class="w-full p-4 rounded-2xl bg-slate-800/90 border border-white/5 outline-none text-xl placeholder:text-slate-400" />
       </div>
 
-      <input id="oddsInput" placeholder="Live odds (-150)" class="w-full p-3 rounded bg-slate-800"/>
-      <input id="probInput" placeholder="Win % (65)" class="w-full p-3 rounded bg-slate-800 hidden"/>
-    </div>
+      <div class="grid grid-cols-2 gap-3">
+        <button id="liveBtn" class="h-14 rounded-2xl bg-blue-600 font-semibold text-xl">Live</button>
+        <button id="notLiveBtn" class="h-14 rounded-2xl bg-slate-700 font-semibold text-xl">Not Live</button>
+      </div>
 
-    <!-- Not Live -->
-    <div id="legsWrap" class="hidden space-y-2">
-      <button id="addLegBtn" class="w-full p-2 bg-blue-500 rounded">+ Add Leg</button>
-      <div id="legsList" class="space-y-2"></div>
-    </div>
+      <div id="liveWrap" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <button id="oddsBtn" class="h-14 rounded-2xl bg-emerald-600 font-semibold text-xl">Odds</button>
+          <button id="probBtn" class="h-14 rounded-2xl bg-slate-700 font-semibold text-xl">%</button>
+        </div>
 
-    <!-- Result -->
-    <div id="result" class="hidden p-4 bg-slate-800 rounded space-y-2">
-      <div id="main" class="text-xl font-bold"></div>
-      <div id="range" class="text-sm text-slate-300"></div>
-      <div id="prob" class="text-sm text-slate-300"></div>
-      <div id="grade" class="text-sm font-semibold"></div>
-    </div>
+        <input id="odds" inputmode="text" placeholder="Live odds (+5359 or -145)" class="w-full p-4 rounded-2xl bg-slate-800/90 border border-white/5 outline-none text-xl placeholder:text-slate-400" />
+        <input id="prob" inputmode="decimal" placeholder="Win % (1.8)" class="w-full p-4 rounded-2xl bg-slate-800/90 border border-white/5 outline-none text-xl placeholder:text-slate-400 hidden" />
+      </div>
 
+      <div id="legsWrap" class="hidden space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="text-sm text-slate-300">Remaining legs</div>
+          <button id="addLeg" class="px-4 h-10 rounded-xl bg-blue-500 font-medium">+ Add Leg</button>
+        </div>
+        <div id="legs" class="space-y-2"></div>
+      </div>
+
+      <div id="result" class="hidden rounded-3xl bg-slate-800/90 border border-white/10 p-5 space-y-4">
+        <div>
+          <div id="main" class="text-3xl font-bold"></div>
+          <div id="range" class="mt-2 text-slate-300 text-lg"></div>
+          <div id="probOut" class="mt-1 text-slate-300 text-lg"></div>
+        </div>
+
+        <div id="comparisonWrap" class="space-y-3 hidden">
+          <div class="flex items-center justify-between text-sm">
+            <span class="text-slate-300">Cashout quality</span>
+            <span id="ratioText" class="text-slate-200 font-semibold"></span>
+          </div>
+
+          <div class="h-3 rounded-full bg-slate-700 overflow-hidden">
+            <div id="qualityBar" class="h-full rounded-full transition-all duration-200"></div>
+          </div>
+
+          <div id="grade" class="text-xl font-bold"></div>
+          <div id="giveUp" class="text-slate-300"></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="rounded-2xl bg-slate-900/70 border border-white/10 p-4">
+            <div class="text-sm text-slate-400">Peak value</div>
+            <div id="peakOut" class="mt-2 text-2xl font-bold"></div>
+          </div>
+          <div class="rounded-2xl bg-slate-900/70 border border-white/10 p-4">
+            <div class="text-sm text-slate-400">Parlay guess</div>
+            <div id="parlayOut" class="mt-2 text-2xl font-bold"></div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl bg-slate-900/70 border border-white/10 p-4 space-y-2">
+          <div id="next" class="text-lg font-semibold text-sky-300"></div>
+          <div id="decision" class="text-slate-200"></div>
+        </div>
+      </div>
+    </div>
   </div>
-  
-  <script>
+
+<script>
 const state = {
   mode: 'live',
-  inputMode: 'odds',
-  legs: []
+  input: 'odds',
+  legs: [],
+  peakValue: 0
 };
 
 const $ = id => document.getElementById(id);
 
-function oddsToProb(o){
-  return o>0 ? 100/(o+100) : Math.abs(o)/(Math.abs(o)+100);
+function money(n) {
+  return `$${Number(n || 0).toFixed(2)}`;
 }
 
-function parseOdds(v){
-  if(!v) return null;
-  v = v.replace(/[^\d+-]/g,'');
-  if(/^\d+$/.test(v)) v = '+'+v;
+function pct(n) {
+  return `${(Number(n || 0) * 100).toFixed(1)}%`;
+}
+
+function sanitizeOdds(v) {
+  if (!v) return '';
+  v = String(v).trim().replace(/\s+/g, '').replace(/[^0-9+-]/g, '');
+  if (v.length > 1) v = v[0] + v.slice(1).replace(/[+-]/g, '');
+  if (/^\d+$/.test(v)) v = '+' + v;
+  return v;
+}
+
+function parseOdds(v) {
+  if (!v) return null;
+  v = sanitizeOdds(v);
+  if (!/^[+-]?\d+$/.test(v)) return null;
   const n = Number(v);
-  return isNaN(n)||n===0?null:n;
+  return Number.isFinite(n) && n !== 0 ? n : null;
 }
 
-function discount(prob, legs){
-  if(legs>=3) return 0.45;
-  if(legs===2) return 0.6;
-
-  if(prob>0.8) return 0.9;
-  if(prob>0.6) return 0.8;
-  if(prob>0.3) return 0.7;
-  if(prob>0.1) return 0.6;
-
-  return 0.5;
+function oddsToProb(o) {
+  return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
 }
 
-function calc(){
-  const stake = +$('stakeInput').value;
-  const payout = +$('payoutInput').value;
-  const cash = +$('cashoutInput').value;
+function clamp(n, min, max) {
+  return Math.min(Math.max(n, min), max);
+}
 
-  if(!stake || !payout || payout<=stake){
+function inferLegCount(stake, payout) {
+  if (!stake || !payout || payout <= stake) return 1;
+  const multiple = payout / stake;
+
+  if (multiple >= 20) return 4;
+  if (multiple >= 8) return 3;
+  if (multiple >= 3) return 2;
+  return 1;
+}
+
+function discount(prob, legs) {
+  if (legs >= 4) return 0.47;
+  if (legs === 3) return 0.52;
+  if (legs === 2) return 0.66;
+
+  if (prob > 0.80) return 0.90;
+  if (prob > 0.60) return 0.82;
+  if (prob > 0.30) return 0.72;
+  if (prob > 0.10) return 0.62;
+  return 0.54;
+}
+
+function nextLegMultiplier(prob) {
+  if (prob < 0.03) return 2.2;
+  if (prob < 0.08) return 1.9;
+  if (prob < 0.18) return 1.65;
+  if (prob < 0.35) return 1.45;
+  return 1.22;
+}
+
+function getProbability() {
+  if (state.mode === 'live') {
+    if (state.input === 'odds') {
+      const o = parseOdds($('odds').value);
+      if (!o) return null;
+      return oddsToProb(o);
+    } else {
+      const p = parseFloat($('prob').value);
+      if (!Number.isFinite(p) || p <= 0 || p > 100) return null;
+      return p / 100;
+    }
+  } else {
+    if (!state.legs.length) return null;
+    return state.legs.reduce((acc, o) => acc * oddsToProb(o), 1);
+  }
+}
+
+function qualityLabel(ratio) {
+  if (ratio >= 1.05) return { label: 'Strong', color: 'text-emerald-300', bar: 'bg-emerald-500' };
+  if (ratio >= 0.90) return { label: 'Fair', color: 'text-lime-300', bar: 'bg-lime-500' };
+  if (ratio >= 0.75) return { label: 'Slightly discounted', color: 'text-yellow-300', bar: 'bg-yellow-500' };
+  if (ratio >= 0.60) return { label: 'Discounted', color: 'text-amber-300', bar: 'bg-amber-500' };
+  return { label: 'Poor', color: 'text-rose-300', bar: 'bg-rose-500' };
+}
+
+function decisionText(ratio) {
+  if (ratio >= 1.05) return 'This is above your estimated fair value.';
+  if (ratio >= 0.90) return 'This is a reasonable cashout if you want to reduce variance.';
+  if (ratio >= 0.75) return 'Close decision. You are giving up some value for certainty.';
+  if (ratio >= 0.60) return 'Holding likely has better upside than this offer.';
+  return 'This cashout is weak relative to the estimated value.';
+}
+
+function updateModeButtons() {
+  $('liveBtn').className = `h-14 rounded-2xl font-semibold text-xl ${state.mode === 'live' ? 'bg-blue-600' : 'bg-slate-700'}`;
+  $('notLiveBtn').className = `h-14 rounded-2xl font-semibold text-xl ${state.mode === 'notLive' ? 'bg-blue-600' : 'bg-slate-700'}`;
+
+  $('oddsBtn').className = `h-14 rounded-2xl font-semibold text-xl ${state.input === 'odds' ? 'bg-emerald-600' : 'bg-slate-700'}`;
+  $('probBtn').className = `h-14 rounded-2xl font-semibold text-xl ${state.input === 'prob' ? 'bg-emerald-600' : 'bg-slate-700'}`;
+
+  $('liveWrap').classList.toggle('hidden', state.mode !== 'live');
+  $('legsWrap').classList.toggle('hidden', state.mode !== 'notLive');
+
+  $('odds').classList.toggle('hidden', state.input !== 'odds');
+  $('prob').classList.toggle('hidden', state.input !== 'prob');
+}
+
+function renderLegs() {
+  const wrap = $('legs');
+  wrap.innerHTML = '';
+
+  state.legs.forEach((o, i) => {
+    const row = document.createElement('div');
+    row.className = 'flex gap-2';
+
+    const input = document.createElement('input');
+    input.value = o > 0 ? `+${o}` : `${o}`;
+    input.inputMode = 'text';
+    input.className = 'flex-1 p-3 rounded-2xl bg-slate-800/90 border border-white/5 outline-none text-lg';
+    input.oninput = (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+      const parsed = parseOdds(e.target.value);
+      if (parsed !== null) state.legs[i] = parsed;
+      calc();
+    };
+
+    const del = document.createElement('button');
+    del.textContent = '✕';
+    del.className = 'w-12 rounded-2xl bg-slate-700';
+    del.onclick = () => {
+      state.legs.splice(i, 1);
+      renderLegs();
+      calc();
+    };
+
+    row.appendChild(input);
+    row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+
+function calc() {
+  const stake = parseFloat($('stake').value);
+  const payout = parseFloat($('payout').value);
+  const cash = parseFloat($('cash').value);
+
+  if (!Number.isFinite(stake) || !Number.isFinite(payout) || payout <= stake) {
     $('result').classList.add('hidden');
     return;
   }
 
-  let prob;
-
-  if(state.mode==='live'){
-    if(state.inputMode==='odds'){
-      const o = parseOdds($('oddsInput').value);
-      if(!o) return;
-      prob = oddsToProb(o);
-    } else {
-      prob = +$('probInput').value/100;
-    }
-  } else {
-    if(state.legs.length===0) return;
-    prob = state.legs.reduce((a,o)=>a*oddsToProb(o),1);
+  const prob = getProbability();
+  if (prob === null || prob <= 0 || prob > 1) {
+    $('result').classList.add('hidden');
+    return;
   }
 
-  const raw = prob * payout;
-  const adj = raw * discount(prob, state.legs.length);
+  const inferredLegs = state.mode === 'live'
+    ? inferLegCount(stake, payout)
+    : state.legs.length;
+
+  const rawEV = prob * payout;
+  const adjusted = rawEV * discount(prob, inferredLegs);
+  const low = adjusted * 0.92;
+  const high = adjusted * 1.08;
+
+  state.peakValue = Math.max(state.peakValue || 0, adjusted);
 
   $('result').classList.remove('hidden');
-  $('main').innerText = `Estimated ≈ $${adj.toFixed(2)}`;
-  $('range').innerText = `Range $${(adj*0.92).toFixed(2)} – $${(adj*1.08).toFixed(2)}`;
-  $('prob').innerText = `Win ${ (prob*100).toFixed(1) }%`;
+  $('main').textContent = `Estimated ≈ ${money(adjusted)}`;
+  $('range').textContent = `Fair range ${money(low)} – ${money(high)}`;
+  $('probOut').textContent = `Win ${pct(prob)}`;
+  $('peakOut').textContent = money(state.peakValue);
+  $('parlayOut').textContent = `${inferredLegs} leg${inferredLegs === 1 ? '' : 's'}`;
 
-  if(cash){
-    const r = cash/adj;
-    let label = 'Poor';
-    if(r>=0.9) label='Fair';
-    else if(r>=0.75) label='Slightly discounted';
-    else if(r>=0.6) label='Discounted';
+  const nextProb = clamp(prob * nextLegMultiplier(prob), 0, 0.98);
+  const nextDiscount = discount(nextProb, Math.max(inferredLegs - 1, 1));
+  const nextValue = payout * nextProb * nextDiscount;
+  const nextGain = nextValue - adjusted;
 
-    $('grade').innerText = `${label} → $${cash}`;
+  $('next').textContent = `Next leg hits → ~${money(nextValue)} (${nextGain >= 0 ? '+' : ''}${money(nextGain)})`;
+  $('decision').textContent = cash && Number.isFinite(cash)
+    ? ''
+    : 'Add the live cashout offer to compare what you are giving up.';
+
+  const comparisonWrap = $('comparisonWrap');
+  if (Number.isFinite(cash) && cash > 0) {
+    comparisonWrap.classList.remove('hidden');
+
+    const ratio = cash / adjusted;
+    const quality = qualityLabel(ratio);
+    const giveUp = adjusted - cash;
+    const ratioPct = ratio * 100;
+
+    $('grade').className = `text-xl font-bold ${quality.color}`;
+    $('grade').textContent = `${quality.label} → ${money(cash)}`;
+    $('ratioText').textContent = `${ratioPct.toFixed(0)}% of est. value`;
+    $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${quality.bar}`;
+    $('qualityBar').style.width = `${Math.min(ratioPct, 100)}%`;
+
+    if (giveUp > 0) {
+      $('giveUp').textContent = `You are giving up ~${money(giveUp)} vs estimated value.`;
+    } else {
+      $('giveUp').textContent = `This is ~${money(Math.abs(giveUp))} above estimated value.`;
+    }
+
+    $('decision').textContent = decisionText(ratio);
   } else {
-    $('grade').innerText = '';
+    comparisonWrap.classList.add('hidden');
+    $('decision').textContent = 'Add the live cashout offer to compare what you are giving up.';
   }
 }
 
-/* UI EVENTS */
+document.querySelectorAll('input').forEach(i => {
+  i.addEventListener('input', calc);
+});
 
-document.querySelectorAll('input').forEach(i=>i.oninput=calc);
-
-$('liveModeBtn').onclick=()=>{
-  state.mode='live';
-  $('liveWrap').classList.remove('hidden');
-  $('legsWrap').classList.add('hidden');
+$('liveBtn').onclick = () => {
+  state.mode = 'live';
+  updateModeButtons();
+  calc();
 };
 
-$('notLiveModeBtn').onclick=()=>{
-  state.mode='notLive';
-  $('liveWrap').classList.add('hidden');
-  $('legsWrap').classList.remove('hidden');
+$('notLiveBtn').onclick = () => {
+  state.mode = 'notLive';
+  updateModeButtons();
+  calc();
 };
 
-$('oddsModeBtn').onclick=()=>{
-  state.inputMode='odds';
-  $('oddsInput').classList.remove('hidden');
-  $('probInput').classList.add('hidden');
+$('oddsBtn').onclick = () => {
+  state.input = 'odds';
+  updateModeButtons();
+  calc();
+  $('odds').focus();
 };
 
-$('probModeBtn').onclick=()=>{
-  state.inputMode='prob';
-  $('oddsInput').classList.add('hidden');
-  $('probInput').classList.remove('hidden');
+$('probBtn').onclick = () => {
+  state.input = 'prob';
+  updateModeButtons();
+  calc();
+  $('prob').focus();
 };
 
-$('addLegBtn').onclick=()=>{
+$('odds').addEventListener('input', (e) => {
+  e.target.value = sanitizeOdds(e.target.value);
+});
+
+$('addLeg').onclick = () => {
   state.legs.push(-110);
   renderLegs();
+  calc();
 };
 
-function renderLegs(){
-  const wrap = $('legsList');
-  wrap.innerHTML='';
-
-  state.legs.forEach((o,i)=>{
-    const input = document.createElement('input');
-    input.value = o;
-    input.className = "w-full p-2 bg-slate-800 rounded";
-    input.oninput=(e)=>{
-      const parsed = parseOdds(e.target.value);
-      if(parsed) state.legs[i]=parsed;
-      calc();
-    };
-    wrap.appendChild(input);
-  });
-}
-
+updateModeButtons();
 calc();
 </script>
-
 </body>
 </html>
