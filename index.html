@@ -1,58 +1,1041 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hedge Tracker</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="utils.js" defer></script>
+  <meta charset="UTF-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+  <meta name="description" content="Compare ride, cashout, and hedge betting options using remaining leg odds. Get fair value estimates and hedge recommendations instantly." />
+  <meta name="theme-color" content="#08111f" />
+  <title>One Leg Left - Hedge Calculator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --primary-blue: rgba(96, 165, 250, 0.45);
+      --primary-emerald: rgba(16, 185, 129, 0.3);
+      --input-bg: rgba(30, 41, 59, 0.92);
+      --card-bg: rgba(15, 23, 42, 0.72);
+      --card-bg-soft: rgba(15, 23, 42, 0.56);
+      --border-light: rgba(148, 163, 184, 0.14);
+      --border-dark: rgba(148, 163, 184, 0.10);
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(168,85,247,0.14), transparent 30%),
+        linear-gradient(180deg, #08111f 0%, #0b1324 45%, #0f172a 100%);
+      color: #fff;
+    }
+
+    .glass {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-light);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+    }
+
+    .glass-soft {
+      background: var(--card-bg-soft);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border-dark);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .input-base {
+      width: 100%;
+      height: 58px;
+      border-radius: 20px;
+      border: 2px solid rgba(255,255,255,0.06);
+      background: var(--input-bg);
+      color: white;
+      padding: 0 18px;
+      font-size: 17px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .input-base::placeholder {
+      color: rgb(148 163 184);
+    }
+
+    .input-base:focus {
+      border-color: var(--primary-blue);
+      box-shadow: 0 0 0 1px var(--primary-blue) inset;
+    }
+
+    .input-base.error {
+      border-color: rgba(239, 68, 68, 0.5);
+      box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.25) inset;
+    }
+
+    .hidden-soft {
+      display: none !important;
+    }
+
+    .mini-card {
+      border-radius: 22px;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .mini-card:hover {
+      border-color: rgba(255,255,255,0.12);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .mini-card.highlight {
+      border: 2px solid rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .mini-card.highlight-blue {
+      border: 2px solid rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .details-toggle {
+      user-select: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .details-toggle:hover {
+      background: rgba(30, 41, 59, 0.6) !important;
+    }
+
+    .info-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgb(148 163 184);
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex: 0 0 auto;
+      transition: all 0.2s ease;
+    }
+
+    .info-btn:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+      color: rgb(226 232 240);
+    }
+
+    .info-btn:focus {
+      outline: 2px solid var(--primary-blue);
+      outline-offset: 2px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: rgba(59, 130, 246, 0.15);
+      color: rgb(96, 165, 250);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .badge.actual {
+      background: rgba(16, 185, 129, 0.15);
+      color: rgb(16, 185, 129);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .error-message {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: rgb(248, 113, 113);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 640px) {
+      .mini-card {
+        padding: 12px;
+      }
+
+      .input-base {
+        height: 52px;
+        font-size: 16px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <h1>Hedge Tracker</h1>
-    </header>
-    <main>
-        <section aria-labelledby="estimated-vs-actual">
-            <h2 id="estimated-vs-actual">Estimated vs Actual Hedge Cards</h2>
-            <div class="badge-container">
-                <div class="badge" aria-label="Estimated Hedge Cards">Estimated: <span id="estimated-cards">0</span></div>
-                <div class="badge" aria-label="Actual Hedge Cards">Actual: <span id="actual-cards">0</span></div>
+  <div class="max-w-xl mx-auto p-4 pb-10 space-y-4">
+    <!-- Header -->
+    <div class="pt-2">
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">One Leg Left</h1>
+      <p class="text-slate-300 mt-2 text-sm sm:text-base">
+        Compare ride, cashout, and hedge using the remaining leg odds.
+      </p>
+    </div>
+
+    <!-- Main Input Container -->
+    <div class="glass rounded-[28px] p-4 sm:p-5 space-y-4">
+      <!-- Input Section -->
+      <div class="space-y-3">
+        <input
+          id="stake"
+          class="input-base"
+          type="number"
+          inputmode="decimal"
+          placeholder="Stake"
+          aria-label="Stake amount"
+          step="0.01"
+          min="0"
+        />
+        <input
+          id="payout"
+          class="input-base"
+          type="number"
+          inputmode="decimal"
+          placeholder="Total payout"
+          aria-label="Total payout amount"
+          step="0.01"
+          min="0"
+        />
+        <input
+          id="cash"
+          class="input-base"
+          type="number"
+          inputmode="decimal"
+          placeholder="Cashout offer"
+          aria-label="Cashout offer amount"
+          step="0.01"
+          min="0"
+        />
+        <input
+          id="remainingOdds"
+          class="input-base"
+          type="text"
+          inputmode="text"
+          placeholder="Remaining leg odds (e.g., -110, +150)"
+          aria-label="Remaining leg odds"
+        />
+
+        <!-- Hedge Odds Input with Info Button -->
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <label for="actualHedgeOdds" class="text-sm text-slate-300">
+              Actual hedge line available <span class="text-slate-500">(optional)</span>
+            </label>
+            <button
+              id="hedgeInfoBtn"
+              type="button"
+              class="info-btn"
+              aria-label="Learn about actual hedge line"
+              aria-describedby="hedgeInfoDesc"
+            >
+              ?
+            </button>
+          </div>
+          <input
+            id="actualHedgeOdds"
+            class="input-base"
+            type="text"
+            inputmode="text"
+            placeholder="Actual hedge line available (e.g., -110, +150)"
+            aria-label="Actual hedge line available"
+          />
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div id="result" class="hidden-soft glass-soft rounded-[28px] p-5 space-y-4">
+        <!-- Main Results Display -->
+        <div class="space-y-2">
+          <div id="main" class="text-3xl sm:text-4xl font-bold leading-tight"></div>
+          <div id="grade" class="text-2xl font-bold"></div>
+          <div id="difference" class="text-slate-300 text-lg"></div>
+          <div id="summaryLine" class="text-slate-300 text-base"></div>
+        </div>
+
+        <!-- Hedge Options Section -->
+        <div id="hedgeOptionsWrap" class="space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-slate-400 font-semibold">Hedge Options</div>
+            <button
+              id="hedgeOptionsInfoBtn"
+              type="button"
+              class="info-btn"
+              aria-label="Learn about hedge options"
+            >
+              ?
+            </button>
+          </div>
+
+          <!-- Estimated Hedge Card -->
+          <div id="estimatedHedgeCard" class="mini-card highlight-blue">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1">
+                <div id="estimatedHedgeTitle" class="text-lg sm:text-xl font-bold"></div>
+                <div id="estimatedHedgeSub" class="mt-2 text-slate-300 text-sm"></div>
+              </div>
+              <span class="badge" aria-label="Estimated hedge">Est.</span>
             </div>
-        </section>
-        <section aria-labelledby="calculations">
-            <h2 id="calculations">Calculations</h2>
-            <div>
-                <button id="calculate-btn">Calculate</button>
+          </div>
+
+          <!-- Actual Hedge Card -->
+          <div id="actualHedgeCard" class="mini-card highlight hidden-soft">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex-1">
+                <div id="actualHedgeTitle" class="text-lg sm:text-xl font-bold"></div>
+                <div id="actualHedgeSub" class="mt-2 text-slate-300 text-sm"></div>
+              </div>
+              <span class="badge actual" aria-label="Actual hedge">Actual</span>
             </div>
-        </section>
-        <section aria-labelledby="error-messages">
-            <h2 id="error-messages">Error Handling</h2>
-            <p id="error-message" aria-live="polite"></p>
-        </section>
-    </main>
-    <footer>
-        <p>Copyright &copy; 2026 Hedge Tracker. All rights reserved.</p>
-    </footer>
+          </div>
+        </div>
+
+        <!-- Details Toggle -->
+        <div
+          id="detailsToggle"
+          class="details-toggle flex items-center justify-between rounded-2xl bg-slate-900/50 border border-white/10 px-4 py-3"
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+          aria-controls="detailsPanel"
+        >
+          <span class="text-sm text-slate-200 font-medium">Details</span>
+          <span id="detailsChevron" class="text-slate-400 text-sm">Show</span>
+        </div>
+
+        <!-- Details Panel -->
+        <div id="detailsPanel" class="hidden-soft space-y-4" role="region" aria-label="Detailed calculations">
+          <!-- Cashout Value Analysis -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-sm gap-3">
+              <span class="text-slate-300">Cashout Value</span>
+              <span id="ratioText" class="text-slate-100 font-semibold"></span>
+            </div>
+
+            <div class="h-3 rounded-full bg-slate-700 overflow-hidden">
+              <div 
+                id="qualityBar" 
+                class="h-full rounded-full transition-all duration-200"
+                role="progressbar"
+                aria-valuenow="0"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              ></div>
+            </div>
+
+            <div class="text-slate-300 text-sm">
+              <span class="text-slate-400">Fair range:</span>
+              <span id="range" class="font-semibold"></span>
+            </div>
+          </div>
+
+          <!-- Hedge Plan -->
+          <div class="mini-card">
+            <div class="text-sm text-slate-400 font-semibold mb-3">Hedge Plan</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <div class="text-xs text-slate-400">Suggested Hedge</div>
+                <div id="hedgeStakeOut" class="mt-1 text-xl font-bold"></div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-400">Ride Fair Profit</div>
+                <div id="rideFairProfitOut" class="mt-1 text-xl font-bold"></div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-400">If Original Wins</div>
+                <div id="origWinsOut" class="mt-1 text-xl font-bold"></div>
+              </div>
+              <div>
+                <div class="text-xs text-slate-400">If Hedge Wins</div>
+                <div id="hedgeWinsOut" class="mt-1 text-xl font-bold"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Comparison -->
+          <div class="mini-card">
+            <div class="text-sm text-slate-400 font-semibold mb-3">Comparison</div>
+            <div class="space-y-2">
+              <div id="lineUsedOut" class="text-sm text-slate-300"></div>
+              <div id="bestOptionOut" class="text-lg font-bold"></div>
+              <div id="bestOptionSub" class="text-slate-300 text-sm"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div
+        id="emptyState"
+        class="rounded-2xl bg-slate-900/40 border border-white/10 px-4 py-4 text-sm text-slate-400"
+      >
+        Enter your bet details to get started.
+      </div>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <!-- Hedge Info Modal -->
+  <div id="infoModal" class="modal-backdrop hidden-soft" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="w-full max-w-sm rounded-[24px] glass p-5 space-y-4">
+      <div id="modalTitle" class="text-xl font-bold">Actual Hedge Line</div>
+      <div id="hedgeInfoDesc" class="text-slate-300 text-sm leading-6">
+        <p class="mb-2">
+          Enter the odds you can actually bet on the opposite outcome. This gives you a real-world hedge recommendation.
+        </p>
+        <p>
+          Leave it blank and we'll estimate the line using a vig-adjusted model.
+        </p>
+      </div>
+      <button
+        id="closeModalBtn"
+        type="button"
+        class="w-full h-12 rounded-2xl bg-slate-700 font-semibold hover:bg-slate-600 transition-colors"
+      >
+        Got it
+      </button>
+    </div>
+  </div>
+
+  <!-- Hedge Options Info Modal -->
+  <div id="hedgeOptionsModal" class="modal-backdrop hidden-soft" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="hedgeOptionsModalTitle">
+    <div class="w-full max-w-sm rounded-[24px] glass p-5 space-y-4">
+      <div id="hedgeOptionsModalTitle" class="text-xl font-bold">Understanding Hedge Options</div>
+      <div class="text-slate-300 text-sm leading-6 space-y-3">
+        <div>
+          <strong class="text-emerald-300">Locks in $X:</strong> Your guaranteed minimum profit, regardless of the remaining leg outcome.
+        </div>
+        <div>
+          <strong class="text-blue-300">If original wins:</strong> Profit if your original bet wins after hedging.
+        </div>
+        <div>
+          <strong class="text-blue-300">If hedge wins:</strong> Profit if your hedge bet wins (original loses).
+        </div>
+      </div>
+      <button
+        id="closeHedgeOptionsModalBtn"
+        type="button"
+        class="w-full h-12 rounded-2xl bg-slate-700 font-semibold hover:bg-slate-600 transition-colors"
+      >
+        Got it
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ===== CONSTANTS =====
+    const CONFIG = {
+      VIG_HOLD: 0.04,
+      FAIR_VALUE_RANGE_LOW: 0.92,
+      FAIR_VALUE_RANGE_HIGH: 1.08,
+      PROB_MIN: 0.0001,
+      PROB_MAX: 0.9999,
+      DEBOUNCE_DELAY: 100
+    };
+
+    // ===== STATE MANAGEMENT =====
+    const state = {
+      detailsOpen: false,
+      lastCalculation: null,
+      inputErrors: {
+        stake: false,
+        payout: false,
+        remainingOdds: false,
+        actualHedgeOdds: false
+      }
+    };
+
+    // ===== DOM UTILITIES =====
+    /**
+     * Get element by ID
+     * @param {string} id - Element ID
+     * @returns {HTMLElement}
+     */
+    const $ = (id) => document.getElementById(id);
+
+    /**
+     * Add or remove error state from input
+     * @param {string} id - Input element ID
+     * @param {boolean} hasError - Whether to add error state
+     */
+    function setInputError(id, hasError) {
+      const input = $(id);
+      state.inputErrors[id] = hasError;
+      if (hasError) {
+        input.classList.add('error');
+      } else {
+        input.classList.remove('error');
+      }
+    }
+
+    /**
+     * Clear all input errors
+     */
+    function clearInputErrors() {
+      Object.keys(state.inputErrors).forEach(id => {
+        setInputError(id, false);
+      });
+    }
+
+    // ===== FORMATTING UTILITIES =====
+    /**
+     * Format number as US currency
+     * @param {number} n - Amount to format
+     * @returns {string}
+     */
+    function money(n) {
+      return `$${Number(n || 0).toFixed(2)}`;
+    }
+
+    /**
+     * Format number as percentage
+     * @param {number} n - Value to format
+     * @returns {string}
+     */
+    function pct(n) {
+      return `${(Number(n || 0) * 100).toFixed(1)}%`;
+    }
+
+    /**
+     * Format odds with +/- prefix
+     * @param {number} odds - Odds to format
+     * @returns {string}
+     */
+    function formatOdds(odds) {
+      return odds > 0 ? `+${odds}` : `${odds}`;
+    }
+
+    /**
+     * Clamp number between min and max
+     * @param {number} n - Number to clamp
+     * @param {number} min - Minimum value
+     * @param {number} max - Maximum value
+     * @returns {number}
+     */
+    function clamp(n, min, max) {
+      return Math.min(Math.max(n, min), max);
+    }
+
+    // ===== ODDS CONVERSION =====
+    /**
+     * Sanitize odds input (remove invalid characters)
+     * @param {string} v - Raw odds input
+     * @returns {string}
+     */
+    function sanitizeOdds(v) {
+      if (!v) return '';
+      v = String(v).trim().replace(/\s+/g, '').replace(/[^0-9+-]/g, '');
+      if (v.length > 1) v = v[0] + v.slice(1).replace(/[+-]/g, '');
+      if (/^\d+$/.test(v)) v = '+' + v;
+      return v;
+    }
+
+    /**
+     * Parse and validate odds
+     * @param {string} v - Raw odds input
+     * @returns {number|null}
+     */
+    function parseOdds(v) {
+      if (!v) return null;
+      const cleaned = sanitizeOdds(v);
+      if (!/^[+-]?\d+$/.test(cleaned)) return null;
+      const n = Number(cleaned);
+      return Number.isFinite(n) && n !== 0 ? n : null;
+    }
+
+    /**
+     * Convert American odds to implied probability
+     * @param {number} o - American odds
+     * @returns {number}
+     */
+    function oddsToProb(o) {
+      return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
+    }
+
+    /**
+     * Convert probability to American odds
+     * @param {number} prob - Probability (0-1)
+     * @returns {number|null}
+     */
+    function probToAmerican(prob) {
+      if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
+      if (prob >= 0.5) return -Math.round((prob / (1 - prob)) * 100);
+      return Math.round(((1 - prob) / prob) * 100);
+    }
+
+    /**
+     * Convert American odds to decimal odds
+     * @param {number} o - American odds
+     * @returns {number}
+     */
+    function americanToDecimal(o) {
+      return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+    }
+
+    // ===== VALIDATION =====
+    /**
+     * Validate stake and payout inputs
+     * @param {number} stake - Stake amount
+     * @param {number} payout - Payout amount
+     * @returns {string|null}
+     */
+    function validateStakeAndPayout(stake, payout) {
+      if (!Number.isFinite(stake) || stake <= 0) {
+        setInputError('stake', true);
+        return 'Enter a valid stake amount.';
+      }
+      if (!Number.isFinite(payout) || payout <= stake) {
+        setInputError('payout', true);
+        return 'Payout must be greater than stake.';
+      }
+      setInputError('stake', false);
+      setInputError('payout', false);
+      return null;
+    }
+
+    /**
+     * Validate remaining odds input
+     * @param {string} odds - Raw odds input
+     * @returns {string|null}
+     */
+    function validateRemainingOdds(odds) {
+      const parsed = parseOdds(odds);
+      if (parsed === null) {
+        setInputError('remainingOdds', true);
+        return 'Enter valid remaining leg odds (e.g., -110, +150).';
+      }
+      setInputError('remainingOdds', false);
+      return null;
+    }
+
+    /**
+     * Get quality label and color for cashout offer
+     * @param {number} ratio - Cashout to fair value ratio
+     * @returns {object}
+     */
+    function qualityLabel(ratio) {
+      if (ratio >= 1.05) return { label: 'Strong', color: 'text-emerald-300', bar: 'bg-emerald-500' };
+      if (ratio >= 0.90) return { label: 'Fair', color: 'text-lime-300', bar: 'bg-lime-500' };
+      if (ratio >= 0.75) return { label: 'Slightly discounted', color: 'text-yellow-300', bar: 'bg-yellow-500' };
+      if (ratio >= 0.60) return { label: 'Discounted', color: 'text-amber-300', bar: 'bg-amber-500' };
+      return { label: 'Poor', color: 'text-rose-300', bar: 'bg-rose-500' };
+    }
+
+    // ===== CALCULATIONS =====
+    /**
+     * Calculate original combined odds
+     * @param {number} stake - Initial stake
+     * @param {number} payout - Total payout
+     * @returns {number|null}
+     */
+    function getOriginalCombinedOdds(stake, payout) {
+      if (!Number.isFinite(stake) || !Number.isFinite(payout) || stake <= 0 || payout <= stake) return null;
+      const decimal = payout / stake;
+      return Math.round((decimal - 1) * 100);
+    }
+
+    /**
+     * Estimate opposite line with vig adjustment
+     * @param {number} remainingOdds - Remaining leg odds
+     * @param {number} hold - Vig hold percentage (default 4%)
+     * @returns {object}
+     */
+    function estimateOppositeLineWithVig(remainingOdds, hold = CONFIG.VIG_HOLD) {
+      const remainingProb = oddsToProb(remainingOdds);
+      const oppositeFairProb = 1 - remainingProb;
+      const viggedOppositeProb = clamp(oppositeFairProb * (1 + hold), CONFIG.PROB_MIN, CONFIG.PROB_MAX);
+      const estimatedOppositeLine = probToAmerican(viggedOppositeProb);
+
+      return {
+        remainingProb,
+        estimatedOppositeLine
+      };
+    }
+
+    /**
+     * Calculate hedge metrics
+     * @param {number} hedgeOdds - Hedge line odds
+     * @param {number} payout - Total payout amount
+     * @param {number} stake - Original stake
+     * @returns {object}
+     */
+    function calculateHedge(hedgeOdds, payout, stake) {
+      const decimal = americanToDecimal(hedgeOdds);
+      const hedgeStake = payout / decimal;
+      const ifOriginalWins = payout - stake - hedgeStake;
+      const ifHedgeWins = (hedgeStake * (decimal - 1)) - stake;
+      const floor = Math.min(ifOriginalWins, ifHedgeWins);
+
+      return {
+        stake: hedgeStake,
+        decimal: decimal,
+        ifOriginalWins: ifOriginalWins,
+        ifHedgeWins: ifHedgeWins,
+        floor: floor
+      };
+    }
+
+    // ===== UI FUNCTIONS =====
+    /**
+     * Show error message and hide results
+     * @param {string} message - Error message to display
+     */
+    function hideResults(message) {
+      $('result').classList.add('hidden-soft');
+      $('emptyState').classList.remove('hidden-soft');
+      $('emptyState').textContent = message;
+    }
+
+    /**
+     * Show results and hide empty state
+     */
+    function showResults() {
+      $('result').classList.remove('hidden-soft');
+      $('emptyState').classList.add('hidden-soft');
+    }
+
+    /**
+     * Update details panel visibility
+     */
+    function updateDetailsPanel() {
+      $('detailsPanel').classList.toggle('hidden-soft', !state.detailsOpen);
+      $('detailsToggle').setAttribute('aria-expanded', String(state.detailsOpen));
+      $('detailsChevron').textContent = state.detailsOpen ? 'Hide' : 'Show';
+    }
+
+    /**
+     * Update quality bar and ratio display
+     * @param {number} ratio - Cashout to fair value ratio
+     * @param {number} cashOfferValue - Actual cash offer
+     * @param {number} fairValue - Fair value estimate
+     */
+    function updateQualityMetrics(ratio, cashOfferValue, fairValue) {
+      const quality = qualityLabel(ratio);
+      const qualityBarWidth = Math.min(ratio * 100, 100);
+      
+      $('ratioText').textContent = `${(ratio * 100).toFixed(0)}% of fair value`;
+      $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${quality.bar}`;
+      $('qualityBar').style.width = `${qualityBarWidth}%`;
+      $('qualityBar').setAttribute('aria-valuenow', qualityBarWidth);
+    }
+
+    /**
+     * Update hedge card visual highlighting
+     * @param {number} hedgeFloor - Hedge guaranteed floor
+     * @param {number} rideProfit - Ride fair profit
+     */
+    function updateHedgeHighlight(hedgeFloor, rideProfit) {
+      const estimatedCard = $('estimatedHedgeCard');
+      if (hedgeFloor > rideProfit) {
+        estimatedCard.classList.add('highlight');
+        estimatedCard.classList.remove('highlight-blue');
+      } else {
+        estimatedCard.classList.remove('highlight');
+        estimatedCard.classList.add('highlight-blue');
+      }
+    }
+
+    // ===== MODAL UTILITIES =====
+    /**
+     * Open info modal
+     */
+    function openModal() {
+      const modal = $('infoModal');
+      modal.classList.remove('hidden-soft');
+      modal.setAttribute('aria-hidden', 'false');
+      // Focus first button in modal
+      $('closeModalBtn').focus();
+    }
+
+    /**
+     * Close info modal
+     */
+    function closeModal() {
+      const modal = $('infoModal');
+      modal.classList.add('hidden-soft');
+      modal.setAttribute('aria-hidden', 'true');
+      // Return focus to trigger button
+      $('hedgeInfoBtn').focus();
+    }
+
+    /**
+     * Open hedge options modal
+     */
+    function openHedgeOptionsModal() {
+      const modal = $('hedgeOptionsModal');
+      modal.classList.remove('hidden-soft');
+      modal.setAttribute('aria-hidden', 'false');
+      $('closeHedgeOptionsModalBtn').focus();
+    }
+
+    /**
+     * Close hedge options modal
+     */
+    function closeHedgeOptionsModal() {
+      const modal = $('hedgeOptionsModal');
+      modal.classList.add('hidden-soft');
+      modal.setAttribute('aria-hidden', 'true');
+      $('hedgeOptionsInfoBtn').focus();
+    }
+
+    // ===== MAIN CALCULATION ENGINE =====
+    /**
+     * Main calculation and display function
+     */
+    function calc() {
+      clearInputErrors();
+      const stake = parseFloat($('stake').value);
+      const payout = parseFloat($('payout').value);
+      const cash = parseFloat($('cash').value);
+      const remainingOdds = parseOdds($('remainingOdds').value);
+      const actualHedgeOdds = parseOdds($('actualHedgeOdds').value);
+
+      // Early validation
+      const stakePayoutError = validateStakeAndPayout(stake, payout);
+      if (stakePayoutError) {
+        hideResults(stakePayoutError);
+        return;
+      }
+
+      const remainingOddsError = validateRemainingOdds($('remainingOdds').value);
+      if (remainingOddsError) {
+        hideResults(remainingOddsError);
+        return;
+      }
+
+      const { remainingProb, estimatedOppositeLine } = estimateOppositeLineWithVig(remainingOdds, CONFIG.VIG_HOLD);
+
+      if (estimatedOppositeLine === null) {
+        hideResults('Could not estimate the hedge line from the remaining leg odds.');
+        return;
+      }
+
+      showResults();
+
+      // ===== FAIR VALUE CALCULATIONS =====
+      const fairValue = payout * remainingProb;
+      const fairProfit = fairValue - stake;
+      const low = fairValue * CONFIG.FAIR_VALUE_RANGE_LOW;
+      const high = fairValue * CONFIG.FAIR_VALUE_RANGE_HIGH;
+
+      // ===== ESTIMATED HEDGE CALCULATIONS =====
+      const estimatedHedge = calculateHedge(estimatedOppositeLine, payout, stake);
+
+      // ===== ACTUAL HEDGE CALCULATIONS (if provided) =====
+      const actualHedge = actualHedgeOdds !== null
+        ? calculateHedge(actualHedgeOdds, payout, stake)
+        : estimatedHedge;
+
+      if (actualHedgeOdds !== null) {
+        $('actualHedgeCard').classList.remove('hidden-soft');
+        $('actualHedgeTitle').textContent = `Hedge ${money(actualHedge.stake)} at ${formatOdds(actualHedgeOdds)}`;
+        $('actualHedgeSub').textContent = `Guaranteed floor: ${money(actualHedge.floor)}`;
+      } else {
+        $('actualHedgeCard').classList.add('hidden-soft');
+      }
+
+      // ===== DISPLAY MAIN RESULTS =====
+      $('main').textContent = `Fair value ≈ ${money(fairValue)}`;
+
+      const originalCombined = getOriginalCombinedOdds(stake, payout);
+      $('summaryLine').textContent = `Win ${pct(remainingProb)} • 1 leg left • Original: ${originalCombined ? `+${originalCombined}` : '—'}`;
+
+      // ===== CASHOUT COMPARISON =====
+      let gradeText = 'Add cashout offer';
+      let gradeClass = 'text-slate-200';
+      let differenceText = '';
+      let cashProfit = null;
+
+      if (Number.isFinite(cash) && cash > 0) {
+        cashProfit = cash - stake;
+        const ratio = cash / fairValue;
+        const quality = qualityLabel(ratio);
+        const diff = cash - fairValue;
+
+        gradeText = `${quality.label} → ${money(cash)}`;
+        gradeClass = quality.color;
+
+        if (diff >= 0) {
+          differenceText = `Offer is about ${money(Math.abs(diff))} above fair value.`;
+        } else {
+          differenceText = `Giving up about ${money(Math.abs(diff))} vs fair value.`;
+        }
+
+        updateQualityMetrics(ratio, cash, fairValue);
+      } else {
+        differenceText = 'Add the cashout offer to compare it to fair value.';
+        $('ratioText').textContent = 'No offer entered';
+        $('qualityBar').className = 'h-full rounded-full transition-all duration-200 bg-slate-600';
+        $('qualityBar').style.width = '0%';
+        $('qualityBar').setAttribute('aria-valuenow', '0');
+      }
+
+      $('grade').className = `text-2xl font-bold ${gradeClass}`;
+      $('grade').textContent = gradeText;
+      $('difference').textContent = differenceText;
+      $('range').textContent = `${money(low)} – ${money(high)}`;
+
+      // ===== HEDGE OPTIONS DISPLAY =====
+      $('estimatedHedgeTitle').textContent = `Hedge ${money(estimatedHedge.stake)} at ${formatOdds(estimatedOppositeLine)}`;
+      $('estimatedHedgeSub').textContent = `Guaranteed floor: ${money(estimatedHedge.floor)}`;
+
+      updateHedgeHighlight(actualHedge.floor, fairProfit);
+
+      // ===== DETAILS PANEL OUTPUT =====
+      const lineUsedLabel = actualHedgeOdds !== null ? 'Actual' : 'Estimated';
+      const lineUsed = actualHedgeOdds !== null ? actualHedgeOdds : estimatedOppositeLine;
+
+      $('lineUsedOut').textContent = `${lineUsedLabel}: ${formatOdds(lineUsed)}`;
+      $('hedgeStakeOut').textContent = money(actualHedge.stake);
+      $('rideFairProfitOut').textContent = money(fairProfit);
+      $('origWinsOut').textContent = money(actualHedge.ifOriginalWins);
+      $('hedgeWinsOut').textContent = money(actualHedge.ifHedgeWins);
+
+      // ===== COMPARISON OUTPUT =====
+      if (cashProfit !== null) {
+        const hedgeVsCashout = actualHedge.floor - cashProfit;
+
+        if (hedgeVsCashout > 0) {
+          $('bestOptionOut').textContent = `Hedge better by ${money(hedgeVsCashout)}`;
+        } else if (hedgeVsCashout < 0) {
+          $('bestOptionOut').textContent = `Cashout better by ${money(Math.abs(hedgeVsCashout))}`;
+        } else {
+          $('bestOptionOut').textContent = 'Cashout and hedge are very close';
+        }
+
+        $('bestOptionSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(actualHedge.floor)}`;
+      } else {
+        $('bestOptionOut').textContent = 'Compare hedge and ride';
+        $('bestOptionSub').textContent = `Ride fair profit: ${money(fairProfit)} • Hedge floor: ${money(actualHedge.floor)}`;
+      }
+
+      // Store calculation for reference
+      state.lastCalculation = {
+        stake, payout, cash, remainingOdds, actualHedgeOdds,
+        fairValue, fairProfit, estimatedHedge, actualHedge
+      };
+    }
+
+    // ===== DEBOUNCED CALCULATION =====
+    let calcTimeout;
+    function debouncedCalc() {
+      clearTimeout(calcTimeout);
+      calcTimeout = setTimeout(calc, CONFIG.DEBOUNCE_DELAY);
+    }
+
+    // ===== EVENT LISTENERS =====
+    // Currency inputs
+    ['stake', 'payout', 'cash'].forEach(id => {
+      $(id).addEventListener('input', debouncedCalc);
+    });
+
+    // Odds inputs with sanitization
+    $('remainingOdds').addEventListener('input', (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+      debouncedCalc();
+    });
+
+    $('actualHedgeOdds').addEventListener('input', (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+      debouncedCalc();
+    });
+
+    // Details toggle
+    $('detailsToggle').onclick = () => {
+      state.detailsOpen = !state.detailsOpen;
+      updateDetailsPanel();
+    };
+
+    $('detailsToggle').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        state.detailsOpen = !state.detailsOpen;
+        updateDetailsPanel();
+      }
+    });
+
+    // Info buttons
+    $('hedgeInfoBtn').onclick = openModal;
+    $('hedgeInfoBtn').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openModal();
+      }
+    });
+
+    $('hedgeOptionsInfoBtn').onclick = openHedgeOptionsModal;
+    $('hedgeOptionsInfoBtn').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        openHedgeOptionsModal();
+      }
+    });
+
+    // Modal controls
+    $('closeModalBtn').onclick = closeModal;
+    $('closeHedgeOptionsModalBtn').onclick = closeHedgeOptionsModal;
+
+    // Close modals on backdrop click
+    $('infoModal').addEventListener('click', (e) => {
+      if (e.target === $('infoModal')) closeModal();
+    });
+
+    $('hedgeOptionsModal').addEventListener('click', (e) => {
+      if (e.target === $('hedgeOptionsModal')) closeHedgeOptionsModal();
+    });
+
+    // Close modals on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if ($('infoModal').getAttribute('aria-hidden') === 'false') closeModal();
+        if ($('hedgeOptionsModal').getAttribute('aria-hidden') === 'false') closeHedgeOptionsModal();
+      }
+    });
+
+    // ===== INITIALIZATION =====
+    updateDetailsPanel();
+    calc();
+  </script>
 </body>
 </html>
-
-<!-- JavaScript Utilities -->
-function calculateEstimatedCards() {
-    // Calculation logic...
-}
-
-function calculateActualCards() {
-    // Calculation logic...
-}
-
-// Event listeners
-document.getElementById('calculate-btn').addEventListener('click', function() {
-    try {
-        const estimated = calculateEstimatedCards();
-        const actual = calculateActualCards();
-        document.getElementById('estimated-cards').textContent = estimated;
-        document.getElementById('actual-cards').textContent = actual;
-    } catch (error) {
-        document.getElementById('error-message').textContent = 'An error occurred: ' + error.message;
-    }
-});
