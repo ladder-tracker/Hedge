@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   />
-  <title>One Leg Left</title>
+  <title>Should I Cash Out?</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -23,8 +23,8 @@
       min-height: 100vh;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background:
-        radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 28%),
-        radial-gradient(circle at top right, rgba(168,85,247,0.14), transparent 30%),
+        radial-gradient(circle at top left, rgba(59,130,246,0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(168,85,247,0.12), transparent 30%),
         linear-gradient(180deg, #08111f 0%, #0b1324 45%, #0f172a 100%);
       color: #fff;
     }
@@ -45,12 +45,12 @@
 
     .input-base {
       width: 100%;
-      height: 58px;
-      border-radius: 20px;
+      height: 56px;
+      border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.06);
       background: rgba(30, 41, 59, 0.92);
       color: white;
-      padding: 0 18px;
+      padding: 0 16px;
       font-size: 17px;
       outline: none;
     }
@@ -64,15 +64,26 @@
       box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.25) inset;
     }
 
-    .hidden-soft {
-      display: none !important;
-    }
-
     .mini-card {
-      border-radius: 22px;
+      border-radius: 20px;
       background: rgba(2, 6, 23, 0.45);
       border: 1px solid rgba(255,255,255,0.08);
-      padding: 16px;
+      padding: 14px;
+    }
+
+    .option-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hidden-soft {
+      display: none !important;
     }
 
     .details-toggle {
@@ -80,13 +91,13 @@
     }
 
     .info-btn {
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       border-radius: 9999px;
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(255,255,255,0.04);
       color: rgb(148 163 184);
-      font-size: 13px;
+      font-size: 12px;
       line-height: 1;
       display: inline-flex;
       align-items: center;
@@ -98,7 +109,7 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(2, 6, 23, 0.7);
+      background: rgba(2, 6, 23, 0.72);
       backdrop-filter: blur(8px);
       z-index: 50;
       display: flex;
@@ -107,61 +118,29 @@
       padding: 20px;
     }
 
-    .option-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 16px;
-      align-items: center;
-      padding: 14px 16px;
-      border-radius: 18px;
-      background: rgba(2, 6, 23, 0.45);
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    .option-row + .option-row {
-      margin-top: 10px;
+    .watermark {
+      font-size: 12px;
+      color: rgba(226,232,240,0.45);
+      text-align: right;
+      margin-top: 4px;
     }
   </style>
 </head>
 <body>
   <div class="max-w-xl mx-auto p-4 pb-10 space-y-4">
     <div class="pt-2">
-      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">One Leg Left</h1>
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Should I Cash Out?</h1>
       <p class="text-slate-300 mt-2 text-sm sm:text-base">
-        Compare hold, cashout, and hedge for a single remaining leg.
+        One-leg-left calculator for cashout, hold, and hedge.
       </p>
     </div>
 
     <div class="glass rounded-[28px] p-4 sm:p-5 space-y-4">
-      <div class="space-y-3">
-        <input
-          id="stake"
-          class="input-base"
-          inputmode="decimal"
-          placeholder="Stake"
-          aria-label="Stake"
-        />
-        <input
-          id="payout"
-          class="input-base"
-          inputmode="decimal"
-          placeholder="Total payout"
-          aria-label="Total payout"
-        />
-        <input
-          id="cash"
-          class="input-base"
-          inputmode="decimal"
-          placeholder="Cashout offer"
-          aria-label="Cashout offer"
-        />
-        <input
-          id="remainingOdds"
-          class="input-base"
-          inputmode="text"
-          placeholder="Remaining leg odds"
-          aria-label="Remaining leg odds"
-        />
+      <div class="grid grid-cols-1 gap-3">
+        <input id="stake" class="input-base" inputmode="decimal" placeholder="Stake" />
+        <input id="payout" class="input-base" inputmode="decimal" placeholder="Total payout" />
+        <input id="cashout" class="input-base" inputmode="decimal" placeholder="Cashout offer" />
+        <input id="remainingOdds" class="input-base" inputmode="text" placeholder="Remaining leg odds" />
 
         <div class="space-y-2">
           <div class="flex items-center gap-2">
@@ -181,47 +160,46 @@
             id="actualHedgeOdds"
             class="input-base"
             inputmode="text"
-            placeholder="Actual hedge line available"
-            aria-label="Actual hedge line available"
+            placeholder="Actual hedge line"
           />
         </div>
       </div>
-            <div id="result" class="hidden-soft glass-soft rounded-[28px] p-5 space-y-4">
-        <div class="space-y-2">
-          <div id="main" class="text-3xl sm:text-4xl font-bold leading-tight"></div>
-          <div id="grade" class="text-2xl font-bold"></div>
-          <div id="difference" class="text-slate-300 text-lg"></div>
-          <div id="summaryLine" class="text-slate-300 text-base"></div>
+            <div id="resultWrap" class="hidden-soft space-y-4">
+        <div class="glass-soft rounded-[26px] p-5 space-y-3">
+          <div id="fairValueEl" class="text-3xl sm:text-4xl font-bold leading-tight"></div>
+          <div id="cashoutGradeEl" class="text-2xl font-bold"></div>
+          <div id="cashoutDiffEl" class="text-slate-300 text-lg"></div>
+          <div id="summaryEl" class="text-slate-300 text-base"></div>
         </div>
 
-        <div id="hedgeOptionsWrap" class="space-y-3">
+        <div id="hedgeSection" class="space-y-3">
           <div class="text-sm text-slate-400">Hedge options</div>
 
           <div class="option-row">
             <div>
-              <div id="cashOptionTitle" class="text-lg font-bold"></div>
-              <div id="cashOptionSub" class="mt-1 text-slate-300 text-sm"></div>
+              <div class="text-lg font-bold">Cash out now</div>
+              <div id="cashoutOptionSub" class="mt-1 text-slate-300 text-sm"></div>
             </div>
-            <div id="cashOptionProfit" class="text-xl font-bold"></div>
+            <div id="cashoutOptionProfit" class="text-xl font-bold"></div>
           </div>
 
-          <div id="estimatedHedgeRow" class="option-row">
+          <div id="estimatedRow" class="option-row">
             <div>
-              <div id="estimatedHedgeTitle" class="text-lg font-bold"></div>
-              <div id="estimatedHedgeSub" class="mt-1 text-slate-300 text-sm"></div>
+              <div id="estimatedTitle" class="text-lg font-bold"></div>
+              <div id="estimatedSub" class="mt-1 text-slate-300 text-sm"></div>
             </div>
-            <div id="estimatedHedgeProfit" class="text-xl font-bold"></div>
+            <div id="estimatedProfit" class="text-xl font-bold"></div>
           </div>
 
-          <div id="actualHedgeRow" class="option-row hidden-soft">
+          <div id="actualRow" class="option-row hidden-soft">
             <div>
-              <div id="actualHedgeTitle" class="text-lg font-bold"></div>
-              <div id="actualHedgeSub" class="mt-1 text-slate-300 text-sm"></div>
+              <div id="actualTitle" class="text-lg font-bold"></div>
+              <div id="actualSub" class="mt-1 text-slate-300 text-sm"></div>
             </div>
-            <div id="actualHedgeProfit" class="text-xl font-bold"></div>
+            <div id="actualProfit" class="text-xl font-bold"></div>
           </div>
 
-          <div id="noHedgeWrap" class="mini-card hidden-soft">
+          <div id="noHedgeCard" class="mini-card hidden-soft">
             <div class="text-lg font-bold">No hedge line available</div>
             <div class="mt-2 text-slate-300 text-sm">
               Compare cashout versus hold only.
@@ -241,10 +219,10 @@
         </div>
 
         <div id="detailsPanel" class="hidden-soft space-y-4">
-          <div class="space-y-3">
+          <div class="mini-card space-y-3">
             <div class="flex items-center justify-between text-sm gap-3">
               <span class="text-slate-300">Cashout value</span>
-              <span id="ratioText" class="text-slate-100 font-semibold"></span>
+              <span id="cashoutRatioEl" class="text-slate-100 font-semibold"></span>
             </div>
 
             <div class="h-3 rounded-full bg-slate-700 overflow-hidden">
@@ -253,10 +231,12 @@
 
             <div class="text-slate-300 text-base">
               <span class="text-slate-400">Fair range:</span>
-              <span id="range"></span>
+              <span id="fairRangeEl"></span>
             </div>
           </div>
         </div>
+
+        <div class="watermark">Bettor Source</div>
       </div>
 
       <div
@@ -284,263 +264,282 @@
       </button>
     </div>
   </div>
-  <script>
-  const state = {
-    detailsOpen: false
-  };
-
-  const $ = (id) => document.getElementById(id);
-
-  function money(n) {
-    return `$${Number(n || 0).toFixed(2)}`;
-  }
-
-  function pct(n) {
-    return `${(Number(n || 0) * 100).toFixed(1)}%`;
-  }
-
-  function clamp(n, min, max) {
-    return Math.min(Math.max(n, min), max);
-  }
-
-  function sanitizeOdds(v) {
-    if (!v) return '';
-    v = String(v).trim().replace(/\s+/g, '').replace(/[^0-9+-]/g, '');
-    if (v.length > 1) v = v[0] + v.slice(1).replace(/[+-]/g, '');
-    if (/^\d+$/.test(v)) v = '+' + v;
-    return v;
-  }
-
-  function parseOdds(v) {
-    if (!v) return null;
-    const cleaned = sanitizeOdds(v);
-    if (!/^[+-]?\d+$/.test(cleaned)) return null;
-    const n = Number(cleaned);
-    return Number.isFinite(n) && n !== 0 ? n : null;
-  }
-
-  function oddsToProb(o) {
-    return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
-  }
-
-  function probToAmerican(prob) {
-    if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
-    if (prob >= 0.5) return -Math.round((prob / (1 - prob)) * 100);
-    return Math.round(((1 - prob) / prob) * 100);
-  }
-
-  function americanToDecimal(o) {
-    return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
-  }
-
-  function qualityLabel(ratio) {
-    if (ratio >= 1.05) return { label: 'Strong', color: 'text-emerald-300', bar: 'bg-emerald-500' };
-    if (ratio >= 0.90) return { label: 'Fair', color: 'text-lime-300', bar: 'bg-lime-500' };
-    if (ratio >= 0.75) return { label: 'Slightly discounted', color: 'text-yellow-300', bar: 'bg-yellow-500' };
-    if (ratio >= 0.60) return { label: 'Discounted', color: 'text-amber-300', bar: 'bg-amber-500' };
-    return { label: 'Poor', color: 'text-rose-300', bar: 'bg-rose-500' };
-  }
-
-  function getOriginalCombinedOdds(stake, payout) {
-    if (!Number.isFinite(stake) || !Number.isFinite(payout) || stake <= 0 || payout <= stake) return null;
-    const decimal = payout / stake;
-    return Math.round((decimal - 1) * 100);
-  }
-
-  function estimateOppositeLineWithVig(remainingOdds, hold = 0.04) {
-    const remainingProb = oddsToProb(remainingOdds);
-    const oppositeProb = 1 - remainingProb;
-    const viggedOppositeProb = clamp(oppositeProb * (1 + hold), 0.0001, 0.9999);
-    const estimatedOppositeLine = probToAmerican(viggedOppositeProb);
-
-    return {
-      remainingProb,
-      estimatedOppositeLine
+    <script>
+    const state = {
+      detailsOpen: false
     };
-  }
 
-  function hideResults(message) {
-    $('result').classList.add('hidden-soft');
-    $('emptyState').classList.remove('hidden-soft');
-    $('emptyState').textContent = message;
-  }
+    const $ = (id) => document.getElementById(id);
 
-  function showResults() {
-    $('result').classList.remove('hidden-soft');
-    $('emptyState').classList.add('hidden-soft');
-  }
-
-  function updateDetailsPanel() {
-    $('detailsPanel').classList.toggle('hidden-soft', !state.detailsOpen);
-    $('detailsToggle').setAttribute('aria-expanded', String(state.detailsOpen));
-    $('detailsChevron').textContent = state.detailsOpen ? 'Hide' : 'Show';
-  }
-
-  function openModal() {
-    $('infoModal').classList.remove('hidden-soft');
-    $('infoModal').setAttribute('aria-hidden', 'false');
-  }
-
-  function closeModal() {
-    $('infoModal').classList.add('hidden-soft');
-    $('infoModal').setAttribute('aria-hidden', 'true');
-  }
-
-  function setOptionRow(titleEl, subEl, profitEl, stake, odds, lockedProfit, prefix = 'Hedge') {
-    titleEl.textContent = `${prefix} ${money(stake)} at ${odds > 0 ? `+${odds}` : odds}`;
-    subEl.textContent = `Locks in ${money(lockedProfit)} profit`;
-    profitEl.textContent = money(lockedProfit);
-  }
-
-  function calc() {
-    const stake = parseFloat($('stake').value);
-    const payout = parseFloat($('payout').value);
-    const cash = parseFloat($('cash').value);
-    const remainingOdds = parseOdds($('remainingOdds').value);
-    const actualHedgeOdds = parseOdds($('actualHedgeOdds').value);
-
-    if (!Number.isFinite(stake) || !Number.isFinite(payout) || payout <= stake) {
-      hideResults('Enter a valid stake and payout. Payout must be greater than stake.');
-      return;
+    function money(n) {
+      return `$${Number(n || 0).toFixed(2)}`;
     }
 
-    if (remainingOdds === null) {
-      hideResults('Enter the remaining leg odds.');
-      return;
+    function pct(n) {
+      return `${(Number(n || 0) * 100).toFixed(1)}%`;
     }
 
-    const { remainingProb, estimatedOppositeLine } = estimateOppositeLineWithVig(remainingOdds, 0.04);
-    const fairValue = payout * remainingProb;
-    const fairProfit = fairValue - stake;
-    const low = fairValue * 0.92;
-    const high = fairValue * 1.08;
-    const originalCombined = getOriginalCombinedOdds(stake, payout);
+    function clamp(n, min, max) {
+      return Math.min(Math.max(n, min), max);
+    }
 
-    showResults();
+    function sanitizeOdds(v) {
+      if (!v) return '';
+      v = String(v).trim().replace(/\s+/g, '').replace(/[^0-9+-]/g, '');
+      if (v.length > 1) v = v[0] + v.slice(1).replace(/[+-]/g, '');
+      if (/^\d+$/.test(v)) v = '+' + v;
+      return v;
+    }
 
-    $('main').textContent = `Fair value ≈ ${money(fairValue)}`;
-    $('summaryLine').textContent = `Win ${pct(remainingProb)} • 1 leg left • Original: ${originalCombined ? `+${originalCombined}` : '—'}`;
+    function parseOdds(v) {
+      if (!v) return null;
+      const cleaned = sanitizeOdds(v);
+      if (!/^[+-]?\d+$/.test(cleaned)) return null;
+      const n = Number(cleaned);
+      return Number.isFinite(n) && n !== 0 ? n : null;
+    }
 
-    let gradeText = 'Add cashout offer';
-    let gradeClass = 'text-slate-200';
-    let differenceText = 'Add the cashout offer to compare it to fair value.';
-    let ratioText = 'No offer entered';
-    let qualityBarWidth = 0;
-    let qualityBarClass = 'bg-slate-600';
-    let cashProfit = null;
+    function oddsToProb(o) {
+      return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
+    }
 
-    if (Number.isFinite(cash) && cash > 0) {
-      cashProfit = cash - stake;
-      const ratio = cash / fairValue;
-      const quality = qualityLabel(ratio);
-      const diff = cash - fairValue;
+    function probToAmerican(prob) {
+      if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
+      if (prob >= 0.5) return -Math.round((prob / (1 - prob)) * 100);
+      return Math.round(((1 - prob) / prob) * 100);
+    }
 
-      gradeText = `${quality.label} → ${money(cash)}`;
-      gradeClass = quality.color;
-      ratioText = `${(ratio * 100).toFixed(0)}% of fair value`;
-      qualityBarWidth = Math.min(ratio * 100, 100);
-      qualityBarClass = quality.bar;
+    function americanToDecimal(o) {
+      return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+    }
 
-      if (diff >= 0) {
-        differenceText = `Offer is about ${money(Math.abs(diff))} above fair value.`;
+    function qualityLabel(ratio) {
+      if (ratio >= 1.05) return { label: 'Strong', color: 'text-emerald-300', bar: 'bg-emerald-500' };
+      if (ratio >= 0.90) return { label: 'Fair', color: 'text-lime-300', bar: 'bg-lime-500' };
+      if (ratio >= 0.75) return { label: 'Slightly discounted', color: 'text-yellow-300', bar: 'bg-yellow-500' };
+      if (ratio >= 0.60) return { label: 'Discounted', color: 'text-amber-300', bar: 'bg-amber-500' };
+      return { label: 'Poor', color: 'text-rose-300', bar: 'bg-rose-500' };
+    }
+
+    function getOriginalCombinedOdds(stake, payout) {
+      if (!Number.isFinite(stake) || !Number.isFinite(payout) || stake <= 0 || payout <= stake) return null;
+      const decimal = payout / stake;
+      return Math.round((decimal - 1) * 100);
+    }
+
+    function estimateOppositeLineWithVig(remainingOdds, hold = 0.04) {
+      const remainingProb = oddsToProb(remainingOdds);
+      const oppositeProb = 1 - remainingProb;
+      const viggedOppositeProb = clamp(oppositeProb * (1 + hold), 0.0001, 0.9999);
+      const estimatedOppositeLine = probToAmerican(viggedOppositeProb);
+      return { remainingProb, estimatedOppositeLine };
+    }
+
+    function getFeasibility(hedgeStake, stake, cashout) {
+      if (!Number.isFinite(hedgeStake) || hedgeStake <= 0) {
+        return 'No hedge';
+      }
+
+      const cashRatio = Number.isFinite(cashout) && cashout > 0 ? hedgeStake / cashout : null;
+      const stakeRatio = Number.isFinite(stake) && stake > 0 ? hedgeStake / stake : null;
+
+      const driver = cashRatio !== null ? cashRatio : stakeRatio;
+
+      if (driver === null) return 'Unknown';
+      if (driver <= 1.5) return 'Easy';
+      if (driver <= 3) return 'Moderate';
+      if (driver <= 8) return 'Heavy';
+      return 'Large stake';
+    }
+
+    function hideResults(message) {
+      $('resultWrap').classList.add('hidden-soft');
+      $('emptyState').classList.remove('hidden-soft');
+      $('emptyState').textContent = message;
+    }
+
+    function showResults() {
+      $('resultWrap').classList.remove('hidden-soft');
+      $('emptyState').classList.add('hidden-soft');
+    }
+
+    function updateDetailsPanel() {
+      $('detailsPanel').classList.toggle('hidden-soft', !state.detailsOpen);
+      $('detailsToggle').setAttribute('aria-expanded', String(state.detailsOpen));
+      $('detailsChevron').textContent = state.detailsOpen ? 'Hide' : 'Show';
+    }
+
+    function openModal() {
+      $('infoModal').classList.remove('hidden-soft');
+      $('infoModal').setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+      $('infoModal').classList.add('hidden-soft');
+      $('infoModal').setAttribute('aria-hidden', 'true');
+    }
+
+    function setHedgeRow(titleEl, subEl, profitEl, stakeNeeded, odds, lockedProfit, feasibility, labelPrefix = 'Hedge') {
+      titleEl.textContent = `${labelPrefix} ${money(stakeNeeded)} at ${odds > 0 ? `+${odds}` : odds}`;
+      subEl.textContent = `${feasibility} • locks in ${money(lockedProfit)} profit`;
+      profitEl.textContent = money(lockedProfit);
+    }
+
+    function calc() {
+      const stake = parseFloat($('stake').value);
+      const payout = parseFloat($('payout').value);
+      const cashout = parseFloat($('cashout').value);
+      const remainingOdds = parseOdds($('remainingOdds').value);
+      const actualHedgeOdds = parseOdds($('actualHedgeOdds').value);
+
+      if (!Number.isFinite(stake) || !Number.isFinite(payout) || payout <= stake) {
+        hideResults('Enter a valid stake and payout. Payout must be greater than stake.');
+        return;
+      }
+
+      if (remainingOdds === null) {
+        hideResults('Enter the remaining leg odds.');
+        return;
+      }
+
+      const { remainingProb, estimatedOppositeLine } = estimateOppositeLineWithVig(remainingOdds, 0.04);
+      const fairValue = payout * remainingProb;
+      const fairProfit = fairValue - stake;
+      const low = fairValue * 0.92;
+      const high = fairValue * 1.08;
+      const originalCombined = getOriginalCombinedOdds(stake, payout);
+
+      showResults();
+
+      $('fairValueEl').textContent = `Fair value ≈ ${money(fairValue)}`;
+      $('summaryEl').textContent = `Win ${pct(remainingProb)} • 1 leg left • Original: ${originalCombined ? `+${originalCombined}` : '—'}`;
+
+      let gradeText = 'Add cashout offer';
+      let gradeClass = 'text-slate-200';
+      let differenceText = 'Add the cashout offer to compare it to fair value.';
+      let ratioText = 'No offer entered';
+      let qualityBarWidth = 0;
+      let qualityBarClass = 'bg-slate-600';
+      let cashoutProfit = null;
+
+      if (Number.isFinite(cashout) && cashout > 0) {
+        cashoutProfit = cashout - stake;
+        const ratio = cashout / fairValue;
+        const quality = qualityLabel(ratio);
+        const diff = cashout - fairValue;
+
+        gradeText = `${quality.label} → ${money(cashout)}`;
+        gradeClass = quality.color;
+        ratioText = `${(ratio * 100).toFixed(0)}% of fair value`;
+        qualityBarWidth = Math.min(ratio * 100, 100);
+        qualityBarClass = quality.bar;
+
+        if (diff >= 0) {
+          differenceText = `Offer is about ${money(Math.abs(diff))} above fair value.`;
+        } else {
+          differenceText = `Giving up about ${money(Math.abs(diff))} vs fair value.`;
+        }
+      }
+
+      $('cashoutGradeEl').className = `text-2xl font-bold ${gradeClass}`;
+      $('cashoutGradeEl').textContent = gradeText;
+      $('cashoutDiffEl').textContent = differenceText;
+
+      $('cashoutRatioEl').textContent = ratioText;
+      $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${qualityBarClass}`;
+      $('qualityBar').style.width = `${qualityBarWidth}%`;
+      $('fairRangeEl').textContent = `${money(low)} – ${money(high)}`;
+
+      $('cashOptionTitle').textContent = 'Cash out now';
+      $('cashOptionSub').textContent = cashoutProfit !== null
+        ? `Locks in ${money(cashoutProfit)} profit`
+        : 'Enter a cashout offer';
+      $('cashOptionProfit').textContent = cashoutProfit !== null ? money(cashoutProfit) : '—';
+
+      if (estimatedOppositeLine === null) {
+        $('estimatedRow').classList.add('hidden-soft');
+        $('actualRow').classList.add('hidden-soft');
+        $('noHedgeCard').classList.remove('hidden-soft');
+        return;
+      }
+
+      $('noHedgeCard').classList.add('hidden-soft');
+
+      const estDecimal = americanToDecimal(estimatedOppositeLine);
+      const estStake = payout / estDecimal;
+      const estIfOriginalWins = payout - stake - estStake;
+      const estIfHedgeWins = (estStake * (estDecimal - 1)) - stake;
+      const estFloor = Math.min(estIfOriginalWins, estIfHedgeWins);
+      const estFeasibility = getFeasibility(estStake, stake, cashout);
+
+      $('estimatedRow').classList.remove('hidden-soft');
+      setHedgeRow(
+        $('estimatedTitle'),
+        $('estimatedSub'),
+        $('estimatedProfit'),
+        estStake,
+        estimatedOppositeLine,
+        estFloor,
+        estFeasibility
+      );
+
+      if (actualHedgeOdds !== null) {
+        const actDecimal = americanToDecimal(actualHedgeOdds);
+        const actStake = payout / actDecimal;
+        const actIfOriginalWins = payout - stake - actStake;
+        const actIfHedgeWins = (actStake * (actDecimal - 1)) - stake;
+        const actFloor = Math.min(actIfOriginalWins, actIfHedgeWins);
+        const actFeasibility = getFeasibility(actStake, stake, cashout);
+
+        $('actualRow').classList.remove('hidden-soft');
+        setHedgeRow(
+          $('actualTitle'),
+          $('actualSub'),
+          $('actualProfit'),
+          actStake,
+          actualHedgeOdds,
+          actFloor,
+          actFeasibility,
+          'Hedge'
+        );
       } else {
-        differenceText = `Giving up about ${money(Math.abs(diff))} vs fair value.`;
+        $('actualRow').classList.add('hidden-soft');
       }
     }
 
-    $('grade').className = `text-2xl font-bold ${gradeClass}`;
-    $('grade').textContent = gradeText;
-    $('difference').textContent = differenceText;
-    $('ratioText').textContent = ratioText;
-    $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${qualityBarClass}`;
-    $('qualityBar').style.width = `${qualityBarWidth}%`;
-    $('range').textContent = `${money(low)} – ${money(high)}`;
+    document.querySelectorAll('input').forEach((input) => {
+      input.addEventListener('input', calc);
+    });
 
-    $('cashOptionTitle').textContent = 'Cash out now';
-    $('cashOptionSub').textContent = cashProfit !== null
-      ? `Locks in ${money(cashProfit)} profit`
-      : 'Enter a cashout offer';
-    $('cashOptionProfit').textContent = cashProfit !== null ? money(cashProfit) : '—';
+    $('remainingOdds').addEventListener('input', (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+    });
 
-    if (estimatedOppositeLine === null) {
-      $('estimatedHedgeRow').classList.add('hidden-soft');
-      $('actualHedgeRow').classList.add('hidden-soft');
-      $('noHedgeWrap').classList.remove('hidden-soft');
-      return;
-    }
+    $('actualHedgeOdds').addEventListener('input', (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+    });
 
-    $('noHedgeWrap').classList.add('hidden-soft');
-
-    const estimatedDecimal = americanToDecimal(estimatedOppositeLine);
-    const estimatedStake = payout / estimatedDecimal;
-    const estimatedIfOriginalWins = payout - stake - estimatedStake;
-    const estimatedIfHedgeWins = (estimatedStake * (estimatedDecimal - 1)) - stake;
-    const estimatedFloor = Math.min(estimatedIfOriginalWins, estimatedIfHedgeWins);
-
-    $('estimatedHedgeRow').classList.remove('hidden-soft');
-    setOptionRow(
-      $('estimatedHedgeTitle'),
-      $('estimatedHedgeSub'),
-      $('estimatedHedgeProfit'),
-      estimatedStake,
-      estimatedOppositeLine,
-      estimatedFloor
-    );
-
-    if (actualHedgeOdds !== null) {
-      const actualDecimal = americanToDecimal(actualHedgeOdds);
-      const actualStake = payout / actualDecimal;
-      const actualIfOriginalWins = payout - stake - actualStake;
-      const actualIfHedgeWins = (actualStake * (actualDecimal - 1)) - stake;
-      const actualFloor = Math.min(actualIfOriginalWins, actualIfHedgeWins);
-
-      $('actualHedgeRow').classList.remove('hidden-soft');
-      setOptionRow(
-        $('actualHedgeTitle'),
-        $('actualHedgeSub'),
-        $('actualHedgeProfit'),
-        actualStake,
-        actualHedgeOdds,
-        actualFloor
-      );
-    } else {
-      $('actualHedgeRow').classList.add('hidden-soft');
-    }
-  }
-
-  document.querySelectorAll('input').forEach((input) => {
-    input.addEventListener('input', calc);
-  });
-
-  $('remainingOdds').addEventListener('input', (e) => {
-    e.target.value = sanitizeOdds(e.target.value);
-  });
-
-  $('actualHedgeOdds').addEventListener('input', (e) => {
-    e.target.value = sanitizeOdds(e.target.value);
-  });
-
-  $('detailsToggle').onclick = () => {
-    state.detailsOpen = !state.detailsOpen;
-    updateDetailsPanel();
-  };
-
-  $('detailsToggle').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
+    $('detailsToggle').onclick = () => {
       state.detailsOpen = !state.detailsOpen;
       updateDetailsPanel();
-    }
-  });
+    };
 
-  $('hedgeInfoBtn').onclick = openModal;
-  $('closeModalBtn').onclick = closeModal;
-  $('infoModal').addEventListener('click', (e) => {
-    if (e.target === $('infoModal')) closeModal();
-  });
+    $('detailsToggle').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        state.detailsOpen = !state.detailsOpen;
+        updateDetailsPanel();
+      }
+    });
 
-  updateDetailsPanel();
-  calc();
-</script>
+    $('hedgeInfoBtn').onclick = openModal;
+    $('closeModalBtn').onclick = closeModal;
+    $('infoModal').addEventListener('click', (e) => {
+      if (e.target === $('infoModal')) closeModal();
+    });
+
+    updateDetailsPanel();
+    calc();
+  </script>
 </body>
 </html>
