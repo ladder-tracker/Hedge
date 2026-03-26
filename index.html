@@ -104,7 +104,7 @@
     <div class="pt-2">
       <h1 id="pageTitle" class="text-3xl sm:text-4xl font-bold tracking-tight">Check Cashout</h1>
       <p class="text-slate-300 mt-2 text-sm sm:text-base">
-        See whether the cashout is worth taking or if a hedge locks in more.
+        Check whether the cashout is worth taking or estimate a hedge for one remaining leg.
       </p>
     </div>
 
@@ -113,8 +113,8 @@
         <button id="evaluateBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
           Check Cashout
         </button>
-        <button id="lockBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
-          Compare Hedge
+        <button id="hedgeBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
+          Hedge Planner
         </button>
       </div>
 
@@ -170,21 +170,12 @@
 
       <div id="hedgeWrap" class="hidden-soft space-y-3">
         <input
-          id="hedgeOdds"
+          id="remainingOdds"
           class="input-base"
           inputmode="text"
-          placeholder="Hedge odds"
-          aria-label="Hedge odds"
+          placeholder="Remaining leg odds"
+          aria-label="Remaining leg odds"
         />
-
-        <div class="grid grid-cols-2 gap-3">
-          <button id="equalProfitBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
-            Equalize
-          </button>
-          <button id="maxFloorBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
-            Higher Floor
-          </button>
-        </div>
       </div>
             <div id="result" class="hidden-soft glass-soft rounded-[28px] p-5 space-y-4">
         <div class="space-y-2">
@@ -231,7 +222,7 @@
 
               <div class="mini-card">
                 <div class="text-sm text-slate-400">Model</div>
-                <div id="parlayOut" class="mt-2 text-2xl font-bold"></div>
+                <div id="modelOut" class="mt-2 text-2xl font-bold"></div>
               </div>
             </div>
 
@@ -262,30 +253,32 @@
           <div id="hedgeDetails" class="space-y-4 hidden-soft">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div class="mini-card">
-                <div class="text-sm text-slate-400">Hedge stake</div>
+                <div class="text-sm text-slate-400">Estimated opposite line</div>
+                <div id="oppLineOut" class="mt-2 text-2xl font-bold"></div>
+              </div>
+
+              <div class="mini-card">
+                <div class="text-sm text-slate-400">Suggested hedge stake</div>
                 <div id="hedgeStakeOut" class="mt-2 text-2xl font-bold"></div>
-              </div>
-
-              <div class="mini-card">
-                <div class="text-sm text-slate-400">Hedge odds</div>
-                <div id="hedgeOddsOut" class="mt-2 text-2xl font-bold"></div>
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="mini-card">
-                <div class="text-sm text-slate-400">Original bet wins</div>
-                <div id="origWinsOut" class="mt-2 text-2xl font-bold"></div>
-              </div>
-
-              <div class="mini-card">
-                <div class="text-sm text-slate-400">Hedge wins</div>
-                <div id="hedgeWinsOut" class="mt-2 text-2xl font-bold"></div>
               </div>
             </div>
 
             <div class="mini-card">
-              <div class="text-sm text-slate-400">Best option</div>
+              <div class="text-sm text-slate-400">Outcome guide</div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                <div>
+                  <div class="text-xs text-slate-400">If original wins</div>
+                  <div id="origWinsOut" class="mt-1 text-xl font-bold"></div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">If hedge wins</div>
+                  <div id="hedgeWinsOut" class="mt-1 text-xl font-bold"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini-card">
+              <div class="text-sm text-slate-400">Cashout comparison</div>
               <div id="hedgeCompareOut" class="mt-2 text-xl font-bold"></div>
               <div id="hedgeCompareSub" class="mt-2 text-slate-300 text-sm"></div>
             </div>
@@ -305,7 +298,6 @@
   const state = {
     decisionMode: 'evaluate',
     evalInput: 'odds',
-    hedgeMode: 'equal',
     peakValue: 0,
     lastEvalKey: '',
     detailsOpen: false,
@@ -349,8 +341,14 @@
     return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
   }
 
-  function americanToDecimal(o) {
-    return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+  function probToAmerican(prob) {
+    if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
+
+    if (prob >= 0.5) {
+      return -Math.round((prob / (1 - prob)) * 100);
+    }
+
+    return Math.round(((1 - prob) / prob) * 100);
   }
 
   function inferLegCount(stake, payout) {
@@ -432,34 +430,21 @@
     return Math.round(american);
   }
 
-  function getEqualProfitHedgeStake(totalPayout, hedgeDecimal) {
-    return totalPayout / hedgeDecimal;
-  }
-
-  function getHigherFloorHedgeStake(totalPayout, hedgeDecimal, originalStake) {
-    const equalStake = getEqualProfitHedgeStake(totalPayout, hedgeDecimal);
-    const minStake = originalStake * 0.5;
-    return Math.max(minStake, equalStake * 0.8);
-  }
-
   function renderModeButtons() {
     $('evaluateBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.decisionMode === 'evaluate' ? 'active-purple' : 'bg-slate-700'}`;
-    $('lockBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.decisionMode === 'lock' ? 'active-purple' : 'bg-slate-700'}`;
+    $('hedgeBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.decisionMode === 'hedge' ? 'active-purple' : 'bg-slate-700'}`;
 
     $('oddsBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.evalInput === 'odds' ? 'active-green' : 'bg-slate-700'}`;
     $('probBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.evalInput === 'prob' ? 'active-green' : 'bg-slate-700'}`;
 
-    $('equalProfitBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.hedgeMode === 'equal' ? 'active-blue' : 'bg-slate-700'}`;
-    $('maxFloorBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.hedgeMode === 'floor' ? 'active-blue' : 'bg-slate-700'}`;
-
     $('evaluateWrap').classList.toggle('hidden-soft', state.decisionMode !== 'evaluate');
-    $('hedgeWrap').classList.toggle('hidden-soft', state.decisionMode !== 'lock');
+    $('hedgeWrap').classList.toggle('hidden-soft', state.decisionMode !== 'hedge');
 
     $('odds').classList.toggle('hidden-soft', state.evalInput !== 'odds');
     $('prob').classList.toggle('hidden-soft', state.evalInput !== 'prob');
 
-    $('pageTitle').textContent = state.decisionMode === 'evaluate' ? 'Check Cashout' : 'Compare Hedge';
-    document.title = state.decisionMode === 'evaluate' ? 'Check Cashout' : 'Compare Hedge';
+    $('pageTitle').textContent = state.decisionMode === 'evaluate' ? 'Check Cashout' : 'Hedge Planner';
+    document.title = state.decisionMode === 'evaluate' ? 'Check Cashout' : 'Hedge Planner';
   }
 
   function updateDetailsPanel() {
@@ -495,12 +480,6 @@
     }
 
     const inferredLegs = inferLegCount(stake, payout);
-
-    // FIX:
-    // Direct probability input should be valued on a gross basis:
-    // fair value = total payout × win probability
-    // No extra discount factor.
-    // No stake subtraction.
     const fairValue = payout * prob;
     const low = fairValue * 0.92;
     const high = fairValue * 1.08;
@@ -560,7 +539,7 @@
     $('qualityBar').style.width = `${qualityBarWidth}%`;
     $('range').textContent = `${money(low)} – ${money(high)}`;
 
-    $('parlayOut').textContent = `~${inferredLegs} legs`;
+    $('modelOut').textContent = `~${inferredLegs} legs`;
     $('peakOut').textContent = money(state.peakValue);
 
     if (Math.abs(state.peakValue - fairValue) < 0.01) {
@@ -591,78 +570,83 @@
     const stake = parseFloat($('stake').value);
     const payout = parseFloat($('payout').value);
     const cash = parseFloat($('cash').value);
-    const hedgeOdds = parseOdds($('hedgeOdds').value);
+    const remainingOdds = parseOdds($('remainingOdds').value);
 
     if (!Number.isFinite(stake) || !Number.isFinite(payout) || payout <= stake) {
       hideResults('Enter a valid stake and payout. Payout must be greater than stake.');
       return;
     }
 
-    if (hedgeOdds === null) {
-      hideResults('Enter hedge odds to compare hedge vs cashout.');
+    if (remainingOdds === null) {
+      hideResults('Enter the remaining leg odds to estimate the hedge.');
       return;
     }
 
-    const hedgeDecimal = americanToDecimal(hedgeOdds);
-    const hedgeStake = state.hedgeMode === 'equal'
-      ? getEqualProfitHedgeStake(payout, hedgeDecimal)
-      : getHigherFloorHedgeStake(payout, hedgeDecimal, stake);
+    const remainingProb = oddsToProb(remainingOdds);
+    const oppositeProb = 1 - remainingProb;
+    const oppositeLine = probToAmerican(oppositeProb);
+
+    if (oppositeLine === null) {
+      hideResults('Could not estimate the opposite line from the remaining leg odds.');
+      return;
+    }
+
+    const oppositeDecimal = oppositeLine > 0
+      ? 1 + (oppositeLine / 100)
+      : 1 + (100 / Math.abs(oppositeLine));
+
+    const hedgeStake = payout / oppositeDecimal;
 
     const ifOriginalWins = payout - stake - hedgeStake;
-    const ifHedgeWins = (hedgeStake * (hedgeDecimal - 1)) - stake;
-    const minLocked = Math.min(ifOriginalWins, ifHedgeWins);
-    const maxLocked = Math.max(ifOriginalWins, ifHedgeWins);
+    const ifHedgeWins = (hedgeStake * (oppositeDecimal - 1)) - stake;
+    const hedgeEdgeVsCashout = Number.isFinite(cash) && cash > 0 ? Math.min(ifOriginalWins, ifHedgeWins) - (cash - stake) : null;
 
     showResults();
 
     $('evaluateDetails').classList.add('hidden-soft');
     $('hedgeDetails').classList.remove('hidden-soft');
 
-    $('main').textContent = `Hedge stake ≈ ${money(hedgeStake)}`;
-    $('summaryLine').textContent = `Estimated locked range: ${money(minLocked)} to ${money(maxLocked)}`;
+    $('main').textContent = `Suggested hedge ≈ ${money(hedgeStake)}`;
+    $('summaryLine').textContent = `Estimated opposite line: ${oppositeLine > 0 ? `+${oppositeLine}` : `${oppositeLine}`}`;
 
     if (Number.isFinite(cash) && cash > 0) {
-      const cashProfit = cash - stake;
-      const hedgeAdvantage = minLocked - cashProfit;
-
-      if (hedgeAdvantage > 0) {
+      if (hedgeEdgeVsCashout > 0) {
         $('grade').className = 'text-2xl font-bold text-emerald-300';
         $('grade').textContent = 'Hedge is better';
-        $('difference').textContent = `Hedge improves your locked floor by about ${money(hedgeAdvantage)}.`;
-      } else if (hedgeAdvantage < 0) {
+        $('difference').textContent = `Estimated hedge beats cashout by about ${money(hedgeEdgeVsCashout)}.`;
+      } else if (hedgeEdgeVsCashout < 0) {
         $('grade').className = 'text-2xl font-bold text-amber-300';
         $('grade').textContent = 'Cashout is better';
-        $('difference').textContent = `Cashout locks in about ${money(Math.abs(hedgeAdvantage))} more than this hedge floor.`;
+        $('difference').textContent = `Cashout beats this hedge by about ${money(Math.abs(hedgeEdgeVsCashout))}.`;
       } else {
         $('grade').className = 'text-2xl font-bold text-lime-300';
-        $('grade').textContent = 'Almost equal';
-        $('difference').textContent = 'Cashout and hedge lock in about the same floor.';
+        $('grade').textContent = 'Very close';
+        $('difference').textContent = 'Cashout and hedge are roughly equal.';
       }
     } else {
       $('grade').className = 'text-2xl font-bold text-slate-200';
-      $('grade').textContent = 'Add cashout offer';
-      $('difference').textContent = 'Enter the cashout offer to compare it with the hedge.';
+      $('grade').textContent = 'Estimated hedge plan';
+      $('difference').textContent = 'Add a cashout offer to compare hedge versus cashout.';
     }
 
+    $('oppLineOut').textContent = oppositeLine > 0 ? `+${oppositeLine}` : `${oppositeLine}`;
     $('hedgeStakeOut').textContent = money(hedgeStake);
-    $('hedgeOddsOut').textContent = hedgeOdds > 0 ? `+${hedgeOdds}` : `${hedgeOdds}`;
     $('origWinsOut').textContent = money(ifOriginalWins);
     $('hedgeWinsOut').textContent = money(ifHedgeWins);
 
     if (Number.isFinite(cash) && cash > 0) {
       const cashProfit = cash - stake;
-      const hedgeAdvantage = minLocked - cashProfit;
+      const hedgeFloor = Math.min(ifOriginalWins, ifHedgeWins);
 
-      if (hedgeAdvantage > 0) {
-        $('hedgeCompareOut').textContent = `Hedge better by ${money(hedgeAdvantage)}`;
-        $('hedgeCompareSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(minLocked)}`;
-      } else if (hedgeAdvantage < 0) {
-        $('hedgeCompareOut').textContent = `Cashout better by ${money(Math.abs(hedgeAdvantage))}`;
-        $('hedgeCompareSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(minLocked)}`;
+      if (hedgeFloor > cashProfit) {
+        $('hedgeCompareOut').textContent = `Hedge better by ${money(hedgeFloor - cashProfit)}`;
+      } else if (hedgeFloor < cashProfit) {
+        $('hedgeCompareOut').textContent = `Cashout better by ${money(cashProfit - hedgeFloor)}`;
       } else {
         $('hedgeCompareOut').textContent = 'Too close to call';
-        $('hedgeCompareSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(minLocked)}`;
       }
+
+      $('hedgeCompareSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(hedgeFloor)}`;
     } else {
       $('hedgeCompareOut').textContent = 'Add cashout offer';
       $('hedgeCompareSub').textContent = 'Enter the cashout offer to compare it with the hedge.';
@@ -682,7 +666,7 @@
     e.target.value = sanitizeOdds(e.target.value);
   });
 
-  $('hedgeOdds').addEventListener('input', (e) => {
+  $('remainingOdds').addEventListener('input', (e) => {
     e.target.value = sanitizeOdds(e.target.value);
   });
 
@@ -694,11 +678,11 @@
     else $('prob').focus();
   };
 
-  $('lockBtn').onclick = () => {
-    state.decisionMode = 'lock';
+  $('hedgeBtn').onclick = () => {
+    state.decisionMode = 'hedge';
     renderModeButtons();
     calc();
-    $('hedgeOdds').focus();
+    $('remainingOdds').focus();
   };
 
   $('oddsBtn').onclick = () => {
@@ -713,18 +697,6 @@
     renderModeButtons();
     calc();
     $('prob').focus();
-  };
-
-  $('equalProfitBtn').onclick = () => {
-    state.hedgeMode = 'equal';
-    renderModeButtons();
-    calc();
-  };
-
-  $('maxFloorBtn').onclick = () => {
-    state.hedgeMode = 'floor';
-    renderModeButtons();
-    calc();
   };
 
   $('detailsToggle').onclick = () => {
