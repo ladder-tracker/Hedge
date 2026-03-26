@@ -329,10 +329,6 @@
     return `${(Number(n || 0) * 100).toFixed(1)}%`;
   }
 
-  function clamp(n, min, max) {
-    return Math.min(Math.max(n, min), max);
-  }
-
   function sanitizeOdds(v) {
     if (!v) return '';
     v = String(v).trim().replace(/\s+/g, '').replace(/[^0-9+-]/g, '');
@@ -364,18 +360,6 @@
     if (multiple >= 8) return 3;
     if (multiple >= 3) return 2;
     return 1;
-  }
-
-  function discount(prob, legs) {
-    if (legs >= 4) return 0.47;
-    if (legs === 3) return 0.52;
-    if (legs === 2) return 0.66;
-
-    if (prob > 0.80) return 0.90;
-    if (prob > 0.60) return 0.82;
-    if (prob > 0.30) return 0.72;
-    if (prob > 0.10) return 0.62;
-    return 0.54;
   }
 
   function qualityLabel(ratio) {
@@ -511,17 +495,22 @@
     }
 
     const inferredLegs = inferLegCount(stake, payout);
-    const rawEV = prob * payout;
-    const adjusted = rawEV * discount(prob, inferredLegs);
-    const low = adjusted * 0.92;
-    const high = adjusted * 1.08;
+
+    // FIX:
+    // Direct probability input should be valued on a gross basis:
+    // fair value = total payout × win probability
+    // No extra discount factor.
+    // No stake subtraction.
+    const fairValue = payout * prob;
+    const low = fairValue * 0.92;
+    const high = fairValue * 1.08;
     const evalKey = getEvalKey();
 
     if (evalKey !== state.lastEvalKey) {
-      state.peakValue = adjusted;
+      state.peakValue = fairValue;
       state.lastEvalKey = evalKey;
     } else {
-      state.peakValue = Math.max(state.peakValue || 0, adjusted);
+      state.peakValue = Math.max(state.peakValue || 0, fairValue);
     }
 
     updateSessionTracker(evalKey, cash);
@@ -530,7 +519,7 @@
     $('evaluateDetails').classList.remove('hidden-soft');
     $('hedgeDetails').classList.add('hidden-soft');
 
-    $('main').textContent = `Fair value ≈ ${money(adjusted)}`;
+    $('main').textContent = `Fair value ≈ ${money(fairValue)}`;
 
     let gradeText = 'Add cashout offer';
     let gradeClass = 'text-slate-200';
@@ -543,9 +532,9 @@
     $('summaryLine').textContent = `Win ${pct(prob)} • Model: ~${inferredLegs} legs • Original: ${originalCombined ? `+${originalCombined}` : '—'}`;
 
     if (Number.isFinite(cash) && cash > 0) {
-      const ratio = cash / adjusted;
+      const ratio = cash / fairValue;
       const quality = qualityLabel(ratio);
-      const diff = cash - adjusted;
+      const diff = cash - fairValue;
 
       gradeText = `${quality.label} → ${money(cash)}`;
       gradeClass = quality.color;
@@ -574,7 +563,7 @@
     $('parlayOut').textContent = `~${inferredLegs} legs`;
     $('peakOut').textContent = money(state.peakValue);
 
-    if (Math.abs(state.peakValue - adjusted) < 0.01) {
+    if (Math.abs(state.peakValue - fairValue) < 0.01) {
       $('peakCard').classList.add('hidden-soft');
     } else {
       $('peakCard').classList.remove('hidden-soft');
@@ -701,7 +690,8 @@
     state.decisionMode = 'evaluate';
     renderModeButtons();
     calc();
-    $('odds').focus();
+    if (state.evalInput === 'odds') $('odds').focus();
+    else $('prob').focus();
   };
 
   $('lockBtn').onclick = () => {
