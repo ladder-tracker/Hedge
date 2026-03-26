@@ -78,6 +78,33 @@
     .details-toggle {
       user-select: none;
     }
+
+    .info-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgb(148 163 184);
+      font-size: 13px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
   </style>
 </head>
 <body>
@@ -119,13 +146,29 @@
           placeholder="Remaining leg odds"
           aria-label="Remaining leg odds"
         />
-        <input
-          id="actualHedgeOdds"
-          class="input-base"
-          inputmode="text"
-          placeholder="Actual hedge line available (optional)"
-          aria-label="Actual hedge line available"
-        />
+
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <label for="actualHedgeOdds" class="text-sm text-slate-300">
+              Actual hedge line available (optional)
+            </label>
+            <button
+              id="hedgeInfoBtn"
+              type="button"
+              class="info-btn"
+              aria-label="About actual hedge line"
+            >
+              i
+            </button>
+          </div>
+          <input
+            id="actualHedgeOdds"
+            class="input-base"
+            inputmode="text"
+            placeholder="Actual hedge line available"
+            aria-label="Actual hedge line available"
+          />
+        </div>
       </div>
             <div id="result" class="hidden-soft glass-soft rounded-[28px] p-5 space-y-4">
         <div class="space-y-2">
@@ -163,16 +206,9 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div class="mini-card">
-              <div class="text-sm text-slate-400">Estimated hedge line</div>
-              <div id="estimatedLineOut" class="mt-2 text-2xl font-bold"></div>
-            </div>
-
-            <div class="mini-card">
-              <div class="text-sm text-slate-400">Line used</div>
-              <div id="lineUsedOut" class="mt-2 text-2xl font-bold"></div>
-            </div>
+          <div class="mini-card">
+            <div class="text-sm text-slate-400">Hedge line</div>
+            <div id="lineUsedOut" class="mt-2 text-2xl font-bold"></div>
           </div>
 
           <div class="mini-card">
@@ -196,12 +232,6 @@
               </div>
             </div>
           </div>
-
-          <div class="mini-card">
-            <div class="text-sm text-slate-400">Decision guide</div>
-            <div id="bestOptionOut" class="mt-2 text-xl font-bold"></div>
-            <div id="bestOptionSub" class="mt-2 text-slate-300 text-sm"></div>
-          </div>
         </div>
       </div>
 
@@ -211,6 +241,23 @@
       >
         Enter your bet details to get started.
       </div>
+    </div>
+  </div>
+
+  <div id="infoModal" class="modal-backdrop hidden-soft" aria-hidden="true">
+    <div class="w-full max-w-sm rounded-[24px] glass p-5 space-y-4">
+      <div class="text-xl font-bold">Actual hedge line</div>
+      <div class="text-slate-300 text-sm leading-6">
+        Add the line you can actually bet on the opposite side for a better estimate.
+        Leave it blank and the tool will use a vig-adjusted estimate.
+      </div>
+      <button
+        id="closeModalBtn"
+        type="button"
+        class="w-full h-12 rounded-2xl bg-slate-700 font-semibold"
+      >
+        Got it
+      </button>
     </div>
   </div>
   <script>
@@ -284,7 +331,6 @@
 
     return {
       remainingProb,
-      oppositeFairProb,
       estimatedOppositeLine
     };
   }
@@ -304,6 +350,16 @@
     $('detailsPanel').classList.toggle('hidden-soft', !state.detailsOpen);
     $('detailsToggle').setAttribute('aria-expanded', String(state.detailsOpen));
     $('detailsChevron').textContent = state.detailsOpen ? 'Hide' : 'Show';
+  }
+
+  function openModal() {
+    $('infoModal').classList.remove('hidden-soft');
+    $('infoModal').setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal() {
+    $('infoModal').classList.add('hidden-soft');
+    $('infoModal').setAttribute('aria-hidden', 'true');
   }
     function calc() {
     const stake = parseFloat($('stake').value);
@@ -390,31 +446,29 @@
     $('qualityBar').style.width = `${qualityBarWidth}%`;
     $('range').textContent = `${money(low)} – ${money(high)}`;
 
-    $('estimatedLineOut').textContent = estimatedOppositeLine > 0 ? `+${estimatedOppositeLine}` : `${estimatedOppositeLine}`;
     $('lineUsedOut').textContent = `${lineUsedLabel}: ${lineUsed > 0 ? `+${lineUsed}` : `${lineUsed}`}`;
     $('hedgeStakeOut').textContent = money(hedgeStake);
     $('rideFairProfitOut').textContent = money(fairProfit);
     $('origWinsOut').textContent = money(ifOriginalWins);
     $('hedgeWinsOut').textContent = money(ifHedgeWins);
 
-    let expectedValueLeader = 'Ride';
-    if (cashProfit !== null && cashProfit > fairProfit) {
-      expectedValueLeader = 'Cashout';
-    }
-
-    let guaranteedLeader = 'Hedge';
-    if (cashProfit !== null && cashProfit > hedgeFloor) {
-      guaranteedLeader = 'Cashout';
-    }
-
     if (cashProfit !== null) {
-      $('bestOptionOut').textContent = `Best EV: ${expectedValueLeader} • Best guaranteed: ${guaranteedLeader}`;
+      const hedgeVsCashout = hedgeFloor - cashProfit;
+
+      if (hedgeVsCashout > 0) {
+        $('bestOptionOut').textContent = `Hedge better by ${money(hedgeVsCashout)}`;
+      } else if (hedgeVsCashout < 0) {
+        $('bestOptionOut').textContent = `Cashout better by ${money(Math.abs(hedgeVsCashout))}`;
+      } else {
+        $('bestOptionOut').textContent = 'Cashout and hedge are very close';
+      }
+
       $('bestOptionSub').textContent =
-        `Ride EV: ${money(fairProfit)} • Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(hedgeFloor)}`;
+        `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(hedgeFloor)}`;
     } else {
-      $('bestOptionOut').textContent = 'Ride vs hedge';
+      $('bestOptionOut').textContent = 'Compare hedge and ride';
       $('bestOptionSub').textContent =
-        `Ride EV: ${money(fairProfit)} • Hedge floor: ${money(hedgeFloor)}`;
+        `Ride fair profit: ${money(fairProfit)} • Hedge floor: ${money(hedgeFloor)}`;
     }
   }
 
@@ -441,6 +495,12 @@
       state.detailsOpen = !state.detailsOpen;
       updateDetailsPanel();
     }
+  });
+
+  $('hedgeInfoBtn').onclick = openModal;
+  $('closeModalBtn').onclick = closeModal;
+  $('infoModal').addEventListener('click', (e) => {
+    if (e.target === $('infoModal')) closeModal();
   });
 
   updateDetailsPanel();
