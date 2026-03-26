@@ -6,7 +6,7 @@
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   />
-  <title>Should I Cash Out?</title>
+  <title>Check Cashout</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     :root {
@@ -78,15 +78,20 @@
       color: white;
     }
 
+    .toggle-btn.active-purple {
+      background: rgb(126 34 206);
+      color: white;
+    }
+
+    .hidden-soft {
+      display: none !important;
+    }
+
     .mini-card {
       border-radius: 22px;
       background: rgba(2, 6, 23, 0.45);
       border: 1px solid rgba(255,255,255,0.08);
       padding: 16px;
-    }
-
-    .hidden-soft {
-      display: none !important;
     }
 
     .details-toggle {
@@ -97,47 +102,47 @@
 <body>
   <div class="max-w-xl mx-auto p-4 pb-10 space-y-4">
     <div class="pt-2">
-      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Should I Cash Out?</h1>
+      <h1 id="pageTitle" class="text-3xl sm:text-4xl font-bold tracking-tight">Check Cashout</h1>
       <p class="text-slate-300 mt-2 text-sm sm:text-base">
-        Fast live estimate for whether the cashout is worth taking.
+        See whether the cashout is worth taking or if a hedge locks in more.
       </p>
     </div>
 
     <div class="glass rounded-[28px] p-4 sm:p-5 space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <button id="evaluateBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
+          Check Cashout
+        </button>
+        <button id="lockBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
+          Compare Hedge
+        </button>
+      </div>
+
       <div class="space-y-3">
         <input
           id="stake"
           class="input-base"
           inputmode="decimal"
-          placeholder="Stake ($15)"
+          placeholder="Stake"
           aria-label="Stake"
         />
         <input
           id="payout"
           class="input-base"
           inputmode="decimal"
-          placeholder="Payout ($104.95)"
-          aria-label="Payout"
+          placeholder="Total payout"
+          aria-label="Total payout"
         />
         <input
           id="cash"
           class="input-base"
           inputmode="decimal"
-          placeholder="Cashout (optional)"
+          placeholder="Cashout offer"
           aria-label="Cashout offer"
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-3">
-        <button id="liveBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-xl">
-          Live
-        </button>
-        <button id="notLiveBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-xl">
-          Not Live
-        </button>
-      </div>
-
-      <div id="liveWrap" class="space-y-3">
+      <div id="evaluateWrap" class="space-y-3">
         <div class="grid grid-cols-2 gap-3">
           <button id="oddsBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-xl">
             Odds
@@ -151,29 +156,35 @@
           id="odds"
           class="input-base"
           inputmode="text"
-          placeholder="Live odds (+6114 or -145)"
+          placeholder="Live odds"
           aria-label="Live odds"
         />
         <input
           id="prob"
           class="input-base hidden-soft"
           inputmode="decimal"
-          placeholder="Win % (6.96)"
+          placeholder="Win probability %"
           aria-label="Win probability"
         />
       </div>
 
-      <div id="legsWrap" class="hidden-soft space-y-3">
-        <div class="flex items-center justify-between gap-3">
-          <div class="text-sm text-slate-300">Remaining legs</div>
-          <button
-            id="addLeg"
-            class="px-4 h-10 rounded-xl bg-blue-500 font-medium whitespace-nowrap"
-          >
-            + Add Leg
+      <div id="hedgeWrap" class="hidden-soft space-y-3">
+        <input
+          id="hedgeOdds"
+          class="input-base"
+          inputmode="text"
+          placeholder="Hedge odds"
+          aria-label="Hedge odds"
+        />
+
+        <div class="grid grid-cols-2 gap-3">
+          <button id="equalProfitBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
+            Equalize
+          </button>
+          <button id="maxFloorBtn" class="toggle-btn h-14 rounded-2xl bg-slate-700 font-semibold text-base sm:text-lg">
+            Higher Floor
           </button>
         </div>
-        <div id="legs" class="space-y-2"></div>
       </div>
             <div id="result" class="hidden-soft glass-soft rounded-[28px] p-5 space-y-4">
         <div class="space-y-2">
@@ -190,66 +201,94 @@
           tabindex="0"
           aria-expanded="false"
         >
-          <span class="text-sm text-slate-200 font-medium">More details</span>
+          <span class="text-sm text-slate-200 font-medium">Details</span>
           <span id="detailsChevron" class="text-slate-400 text-sm">Show</span>
         </div>
 
         <div id="detailsPanel" class="hidden-soft space-y-4">
-          <div class="space-y-3">
-            <div class="flex items-center justify-between text-sm gap-3">
-              <span class="text-slate-300">Offer quality</span>
-              <span id="ratioText" class="text-slate-100 font-semibold"></span>
+          <div id="evaluateDetails" class="space-y-4 hidden-soft">
+            <div class="space-y-3">
+              <div class="flex items-center justify-between text-sm gap-3">
+                <span class="text-slate-300">Offer value</span>
+                <span id="ratioText" class="text-slate-100 font-semibold"></span>
+              </div>
+
+              <div class="h-3 rounded-full bg-slate-700 overflow-hidden">
+                <div id="qualityBar" class="h-full rounded-full transition-all duration-200"></div>
+              </div>
+
+              <div class="text-slate-300 text-base">
+                <span class="text-slate-400">Fair range:</span>
+                <span id="range"></span>
+              </div>
             </div>
 
-            <div class="h-3 rounded-full bg-slate-700 overflow-hidden">
-              <div id="qualityBar" class="h-full rounded-full transition-all duration-200"></div>
-            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div id="peakCard" class="mini-card">
+                <div class="text-sm text-slate-400">Best fair value</div>
+                <div id="peakOut" class="mt-2 text-2xl font-bold"></div>
+              </div>
 
-            <div class="text-slate-300 text-base">
-              <span class="text-slate-400">Fair range:</span>
-              <span id="range"></span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div id="peakCard" class="mini-card">
-              <div class="text-sm text-slate-400">Session peak</div>
-              <div id="peakOut" class="mt-2 text-2xl font-bold"></div>
+              <div class="mini-card">
+                <div class="text-sm text-slate-400">Model</div>
+                <div id="parlayOut" class="mt-2 text-2xl font-bold"></div>
+              </div>
             </div>
 
             <div class="mini-card">
-              <div class="text-sm text-slate-400">Model size</div>
-              <div id="parlayOut" class="mt-2 text-2xl font-bold"></div>
+              <div class="text-sm text-slate-400">Offer tracker</div>
+              <div class="grid grid-cols-2 gap-3 mt-3">
+                <div>
+                  <div class="text-xs text-slate-400">Current</div>
+                  <div id="sessionCurrent" class="mt-1 text-xl font-bold"></div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">Trend</div>
+                  <div id="sessionTrend" class="mt-1 text-xl font-bold"></div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">High</div>
+                  <div id="sessionBest" class="mt-1 text-xl font-bold"></div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-400">Low</div>
+                  <div id="sessionWorst" class="mt-1 text-xl font-bold"></div>
+                </div>
+              </div>
+              <div id="sessionVsBest" class="text-slate-300 text-sm mt-3"></div>
             </div>
           </div>
 
-          <div id="liveSessionCard" class="mini-card hidden-soft space-y-2">
-            <div class="text-sm text-slate-400">Session tracker</div>
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <div class="text-xs text-slate-400">Current</div>
-                <div id="sessionCurrent" class="mt-1 text-xl font-bold"></div>
+          <div id="hedgeDetails" class="space-y-4 hidden-soft">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="mini-card">
+                <div class="text-sm text-slate-400">Hedge stake</div>
+                <div id="hedgeStakeOut" class="mt-2 text-2xl font-bold"></div>
               </div>
-              <div>
-                <div class="text-xs text-slate-400">Trend</div>
-                <div id="sessionTrend" class="mt-1 text-xl font-bold"></div>
-              </div>
-              <div>
-                <div class="text-xs text-slate-400">Best seen</div>
-                <div id="sessionBest" class="mt-1 text-xl font-bold"></div>
-              </div>
-              <div>
-                <div class="text-xs text-slate-400">Worst seen</div>
-                <div id="sessionWorst" class="mt-1 text-xl font-bold"></div>
+
+              <div class="mini-card">
+                <div class="text-sm text-slate-400">Hedge odds</div>
+                <div id="hedgeOddsOut" class="mt-2 text-2xl font-bold"></div>
               </div>
             </div>
-            <div id="sessionVsBest" class="text-slate-300 text-sm"></div>
-          </div>
 
-          <div id="notLiveNextCard" class="mini-card hidden-soft space-y-2">
-            <div id="next" class="text-2xl font-bold text-sky-300 leading-tight"></div>
-            <div id="nextSub" class="text-slate-300 text-base"></div>
-            <div id="assumptionNote" class="text-slate-400 text-sm"></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="mini-card">
+                <div class="text-sm text-slate-400">Original bet wins</div>
+                <div id="origWinsOut" class="mt-2 text-2xl font-bold"></div>
+              </div>
+
+              <div class="mini-card">
+                <div class="text-sm text-slate-400">Hedge wins</div>
+                <div id="hedgeWinsOut" class="mt-2 text-2xl font-bold"></div>
+              </div>
+            </div>
+
+            <div class="mini-card">
+              <div class="text-sm text-slate-400">Best option</div>
+              <div id="hedgeCompareOut" class="mt-2 text-xl font-bold"></div>
+              <div id="hedgeCompareSub" class="mt-2 text-slate-300 text-sm"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -258,17 +297,17 @@
         id="emptyState"
         class="rounded-2xl bg-slate-900/40 border border-white/10 px-4 py-4 text-sm text-slate-400"
       >
-        Enter your bet details to estimate the current value of the ticket.
+        Enter your bet details to get started.
       </div>
     </div>
   </div>
   <script>
   const state = {
-    mode: 'live',
-    input: 'odds',
-    legs: [],
+    decisionMode: 'evaluate',
+    evalInput: 'odds',
+    hedgeMode: 'equal',
     peakValue: 0,
-    lastCalcKey: '',
+    lastEvalKey: '',
     detailsOpen: false,
     sessionTracker: {
       calcKey: '',
@@ -314,6 +353,10 @@
     return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
   }
 
+  function americanToDecimal(o) {
+    return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+  }
+
   function inferLegCount(stake, payout) {
     if (!stake || !payout || payout <= stake) return 1;
     const multiple = payout / stake;
@@ -335,26 +378,6 @@
     return 0.54;
   }
 
-  function nextLegMultiplier(prob) {
-    if (prob < 0.03) return 2.2;
-    if (prob < 0.08) return 1.9;
-    if (prob < 0.18) return 1.65;
-    if (prob < 0.35) return 1.45;
-    return 1.22;
-  }
-
-  function getBaseCalcKey() {
-    return JSON.stringify({
-      mode: state.mode,
-      input: state.input,
-      stake: $('stake').value,
-      payout: $('payout').value,
-      odds: $('odds').value,
-      prob: $('prob').value,
-      legs: state.legs
-    });
-  }
-
   function qualityLabel(ratio) {
     if (ratio >= 1.05) return { label: 'Strong', color: 'text-emerald-300', bar: 'bg-emerald-500' };
     if (ratio >= 0.90) return { label: 'Fair', color: 'text-lime-300', bar: 'bg-lime-500' };
@@ -363,67 +386,32 @@
     return { label: 'Poor', color: 'text-rose-300', bar: 'bg-rose-500' };
   }
 
-  function getProbability() {
-    if (state.mode === 'live') {
-      if (state.input === 'odds') {
-        const o = parseOdds($('odds').value);
-        if (!o) return { probability: null };
-        return { probability: oddsToProb(o) };
-      }
-
-      const p = parseFloat($('prob').value);
-      if (!Number.isFinite(p) || p <= 0 || p > 100) return { probability: null };
-      return { probability: p / 100 };
+  function getEvalProbability() {
+    if (state.evalInput === 'odds') {
+      const o = parseOdds($('odds').value);
+      if (!o) return null;
+      return oddsToProb(o);
     }
 
-    if (!state.legs.length) return { probability: null };
-
-    let usedNeutralFallback = false;
-
-    const probability = state.legs.reduce((acc, leg) => {
-      if (leg && Number.isFinite(leg.currentOdds)) {
-        return acc * oddsToProb(leg.currentOdds);
-      }
-
-      if (leg && Number.isFinite(leg.originalOdds)) {
-        return acc * oddsToProb(leg.originalOdds);
-      }
-
-      usedNeutralFallback = true;
-      return acc * 0.5;
-    }, 1);
-
-    return {
-      probability,
-      usedNeutralFallback
-    };
+    const p = parseFloat($('prob').value);
+    if (!Number.isFinite(p) || p <= 0 || p > 100) return null;
+    return p / 100;
   }
 
-  function getNextLegValue({ payout, adjusted, inferredLegs, prob, usedNeutralFallback }) {
-    if (inferredLegs <= 1) {
-      return {
-        nextValue: payout,
-        nextGain: payout - adjusted,
-        nextLabel: 'Final leg hits',
-        note: usedNeutralFallback ? 'Uses neutral estimate for any future leg with unknown odds.' : ''
-      };
-    }
-
-    const boostedProb = clamp(prob * nextLegMultiplier(prob), 0, 0.98);
-    const nextRemainingLegs = Math.max(inferredLegs - 1, 1);
-    const nextAdjusted = payout * boostedProb * discount(boostedProb, nextRemainingLegs);
-
-    return {
-      nextValue: nextAdjusted,
-      nextGain: nextAdjusted - adjusted,
-      nextLabel: 'Next leg hits',
-      note: usedNeutralFallback ? 'Includes neutral 50% estimate for unstarted leg.' : ''
-    };
+  function getEvalKey() {
+    return JSON.stringify({
+      mode: state.decisionMode,
+      evalInput: state.evalInput,
+      stake: $('stake').value,
+      payout: $('payout').value,
+      odds: $('odds').value,
+      prob: $('prob').value
+    });
   }
 
-  function resetSessionTracker(baseCalcKey) {
+  function resetSessionTracker(evalKey) {
     state.sessionTracker = {
-      calcKey: baseCalcKey,
+      calcKey: evalKey,
       current: null,
       best: null,
       worst: null,
@@ -432,106 +420,68 @@
     };
   }
 
-  function updateSessionTracker(baseCalcKey, cash) {
-    if (state.sessionTracker.calcKey !== baseCalcKey) {
-      resetSessionTracker(baseCalcKey);
+  function updateSessionTracker(evalKey, cash) {
+    if (state.sessionTracker.calcKey !== evalKey) {
+      resetSessionTracker(evalKey);
     }
 
-    if (!Number.isFinite(cash) || cash <= 0) {
-      return;
-    }
+    if (!Number.isFinite(cash) || cash <= 0) return;
 
     const tracker = state.sessionTracker;
-
     tracker.current = cash;
 
-    if (tracker.best === null || cash > tracker.best) {
-      tracker.best = cash;
-    }
+    if (tracker.best === null || cash > tracker.best) tracker.best = cash;
+    if (tracker.worst === null || cash < tracker.worst) tracker.worst = cash;
 
-    if (tracker.worst === null || cash < tracker.worst) {
-      tracker.worst = cash;
-    }
-
-    if (tracker.last === null) {
-      tracker.trend = 'Flat';
-    } else if (cash > tracker.last) {
-      tracker.trend = 'Rising';
-    } else if (cash < tracker.last) {
-      tracker.trend = 'Falling';
-    } else {
-      tracker.trend = 'Flat';
-    }
+    if (tracker.last === null) tracker.trend = 'Flat';
+    else if (cash > tracker.last) tracker.trend = 'Rising';
+    else if (cash < tracker.last) tracker.trend = 'Falling';
+    else tracker.trend = 'Flat';
 
     tracker.last = cash;
   }
-    function updateModeButtons() {
-    $('liveBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.mode === 'live' ? 'active-blue' : 'bg-slate-700'}`;
-    $('notLiveBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.mode === 'notLive' ? 'active-blue' : 'bg-slate-700'}`;
 
-    $('oddsBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.input === 'odds' ? 'active-green' : 'bg-slate-700'}`;
-    $('probBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.input === 'prob' ? 'active-green' : 'bg-slate-700'}`;
+  function getOriginalCombinedOdds(stake, payout) {
+    if (!Number.isFinite(stake) || !Number.isFinite(payout) || stake <= 0 || payout <= stake) return null;
+    const decimal = payout / stake;
+    const american = (decimal - 1) * 100;
+    return Math.round(american);
+  }
 
-    $('liveWrap').classList.toggle('hidden-soft', state.mode !== 'live');
-    $('legsWrap').classList.toggle('hidden-soft', state.mode !== 'notLive');
+  function getEqualProfitHedgeStake(totalPayout, hedgeDecimal) {
+    return totalPayout / hedgeDecimal;
+  }
 
-    $('odds').classList.toggle('hidden-soft', state.input !== 'odds');
-    $('prob').classList.toggle('hidden-soft', state.input !== 'prob');
+  function getHigherFloorHedgeStake(totalPayout, hedgeDecimal, originalStake) {
+    const equalStake = getEqualProfitHedgeStake(totalPayout, hedgeDecimal);
+    const minStake = originalStake * 0.5;
+    return Math.max(minStake, equalStake * 0.8);
+  }
+
+  function renderModeButtons() {
+    $('evaluateBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.decisionMode === 'evaluate' ? 'active-purple' : 'bg-slate-700'}`;
+    $('lockBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.decisionMode === 'lock' ? 'active-purple' : 'bg-slate-700'}`;
+
+    $('oddsBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.evalInput === 'odds' ? 'active-green' : 'bg-slate-700'}`;
+    $('probBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-xl ${state.evalInput === 'prob' ? 'active-green' : 'bg-slate-700'}`;
+
+    $('equalProfitBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.hedgeMode === 'equal' ? 'active-blue' : 'bg-slate-700'}`;
+    $('maxFloorBtn').className = `toggle-btn h-14 rounded-2xl font-semibold text-base sm:text-lg ${state.hedgeMode === 'floor' ? 'active-blue' : 'bg-slate-700'}`;
+
+    $('evaluateWrap').classList.toggle('hidden-soft', state.decisionMode !== 'evaluate');
+    $('hedgeWrap').classList.toggle('hidden-soft', state.decisionMode !== 'lock');
+
+    $('odds').classList.toggle('hidden-soft', state.evalInput !== 'odds');
+    $('prob').classList.toggle('hidden-soft', state.evalInput !== 'prob');
+
+    $('pageTitle').textContent = state.decisionMode === 'evaluate' ? 'Check Cashout' : 'Compare Hedge';
+    document.title = state.decisionMode === 'evaluate' ? 'Check Cashout' : 'Compare Hedge';
   }
 
   function updateDetailsPanel() {
     $('detailsPanel').classList.toggle('hidden-soft', !state.detailsOpen);
     $('detailsToggle').setAttribute('aria-expanded', String(state.detailsOpen));
     $('detailsChevron').textContent = state.detailsOpen ? 'Hide' : 'Show';
-  }
-
-  function renderLegs() {
-    const wrap = $('legs');
-    wrap.innerHTML = '';
-
-    state.legs.forEach((leg, i) => {
-      const row = document.createElement('div');
-      row.className = 'flex gap-2';
-
-      const input = document.createElement('input');
-      input.className = 'input-base flex-1';
-      input.style.height = '54px';
-      input.inputMode = 'text';
-      input.placeholder = 'Odds (-110)';
-      input.value = Number.isFinite(leg.currentOdds)
-        ? (leg.currentOdds > 0 ? `+${leg.currentOdds}` : `${leg.currentOdds}`)
-        : (Number.isFinite(leg.originalOdds) ? (leg.originalOdds > 0 ? `+${leg.originalOdds}` : `${leg.originalOdds}`) : '');
-
-      input.oninput = (e) => {
-        e.target.value = sanitizeOdds(e.target.value);
-        const parsed = parseOdds(e.target.value);
-
-        if (parsed !== null) {
-          state.legs[i].currentOdds = parsed;
-          if (!Number.isFinite(state.legs[i].originalOdds)) {
-            state.legs[i].originalOdds = parsed;
-          }
-        } else {
-          state.legs[i].currentOdds = null;
-        }
-
-        calc();
-      };
-
-      const del = document.createElement('button');
-      del.className = 'w-14 rounded-2xl bg-slate-700 text-xl';
-      del.textContent = '×';
-      del.setAttribute('aria-label', 'Remove leg');
-      del.onclick = () => {
-        state.legs.splice(i, 1);
-        renderLegs();
-        calc();
-      };
-
-      row.appendChild(input);
-      row.appendChild(del);
-      wrap.appendChild(row);
-    });
   }
 
   function hideResults(message) {
@@ -544,8 +494,7 @@
     $('result').classList.remove('hidden-soft');
     $('emptyState').classList.add('hidden-soft');
   }
-
-  function calc() {
+    function runEvaluateMode() {
     const stake = parseFloat($('stake').value);
     const payout = parseFloat($('payout').value);
     const cash = parseFloat($('cash').value);
@@ -555,47 +504,43 @@
       return;
     }
 
-    const probabilityData = getProbability();
-    const prob = probabilityData.probability;
-    const usedNeutralFallback = !!probabilityData.usedNeutralFallback;
-
+    const prob = getEvalProbability();
     if (prob === null || prob <= 0 || prob > 1) {
-      hideResults(state.mode === 'live'
-        ? 'Enter valid live odds or win %.'
-        : 'Add at least one remaining leg.');
+      hideResults('Enter live odds or win probability to check the cashout.');
       return;
     }
 
-    const inferredLegs = state.mode === 'live'
-      ? inferLegCount(stake, payout)
-      : state.legs.length;
-
+    const inferredLegs = inferLegCount(stake, payout);
     const rawEV = prob * payout;
     const adjusted = rawEV * discount(prob, inferredLegs);
     const low = adjusted * 0.92;
     const high = adjusted * 1.08;
-    const baseCalcKey = getBaseCalcKey();
+    const evalKey = getEvalKey();
 
-    if (baseCalcKey !== state.lastCalcKey) {
+    if (evalKey !== state.lastEvalKey) {
       state.peakValue = adjusted;
-      state.lastCalcKey = baseCalcKey;
+      state.lastEvalKey = evalKey;
     } else {
       state.peakValue = Math.max(state.peakValue || 0, adjusted);
     }
 
-    updateSessionTracker(baseCalcKey, cash);
+    updateSessionTracker(evalKey, cash);
     showResults();
 
-    $('main').textContent = `Estimated ≈ ${money(adjusted)}`;
+    $('evaluateDetails').classList.remove('hidden-soft');
+    $('hedgeDetails').classList.add('hidden-soft');
 
-    let gradeText = 'Add cashout offer to compare';
+    $('main').textContent = `Fair value ≈ ${money(adjusted)}`;
+
+    let gradeText = 'Add cashout offer';
     let gradeClass = 'text-slate-200';
     let differenceText = '';
     let ratioText = 'No offer entered';
     let qualityBarWidth = 0;
     let qualityBarClass = 'bg-slate-600';
 
-    const summaryLine = `Win ${pct(prob)} • ${state.mode === 'live' ? `~${inferredLegs} legs` : `${inferredLegs} remaining`}`;
+    const originalCombined = getOriginalCombinedOdds(stake, payout);
+    $('summaryLine').textContent = `Win ${pct(prob)} • Model: ~${inferredLegs} legs • Original: ${originalCombined ? `+${originalCombined}` : '—'}`;
 
     if (Number.isFinite(cash) && cash > 0) {
       const ratio = cash / adjusted;
@@ -604,76 +549,140 @@
 
       gradeText = `${quality.label} → ${money(cash)}`;
       gradeClass = quality.color;
-      ratioText = `${(ratio * 100).toFixed(0)}% of est. value`;
+      ratioText = `${(ratio * 100).toFixed(0)}% of fair value`;
       qualityBarWidth = Math.min(ratio * 100, 100);
       qualityBarClass = quality.bar;
 
       if (diff >= 0) {
-        differenceText = `Offer is ~${money(Math.abs(diff))} above estimated value.`;
+        differenceText = `Offer is about ${money(Math.abs(diff))} above fair value.`;
       } else {
-        differenceText = `Giving up ~${money(Math.abs(diff))} vs estimated value.`;
+        differenceText = `Giving up about ${money(Math.abs(diff))} vs fair value.`;
       }
     } else {
-      differenceText = 'Enter the live cashout offer to compare value.';
+      differenceText = 'Add the cashout offer to compare it to fair value.';
     }
 
     $('grade').className = `text-2xl font-bold ${gradeClass}`;
     $('grade').textContent = gradeText;
     $('difference').textContent = differenceText;
-    $('summaryLine').textContent = summaryLine;
 
     $('ratioText').textContent = ratioText;
     $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${qualityBarClass}`;
     $('qualityBar').style.width = `${qualityBarWidth}%`;
     $('range').textContent = `${money(low)} – ${money(high)}`;
 
-    $('parlayOut').textContent = state.mode === 'live'
-      ? `~${inferredLegs} legs`
-      : `${inferredLegs} remaining`;
-
+    $('parlayOut').textContent = `~${inferredLegs} legs`;
     $('peakOut').textContent = money(state.peakValue);
+
     if (Math.abs(state.peakValue - adjusted) < 0.01) {
       $('peakCard').classList.add('hidden-soft');
     } else {
       $('peakCard').classList.remove('hidden-soft');
     }
 
-    if (state.mode === 'live') {
-      $('liveSessionCard').classList.remove('hidden-soft');
-      $('notLiveNextCard').classList.add('hidden-soft');
+    const tracker = state.sessionTracker;
+    $('sessionCurrent').textContent = tracker.current !== null ? money(tracker.current) : '—';
+    $('sessionBest').textContent = tracker.best !== null ? money(tracker.best) : '—';
+    $('sessionWorst').textContent = tracker.worst !== null ? money(tracker.worst) : '—';
+    $('sessionTrend').textContent = tracker.trend || '—';
 
-      const tracker = state.sessionTracker;
-      $('sessionCurrent').textContent = tracker.current !== null ? money(tracker.current) : '—';
-      $('sessionBest').textContent = tracker.best !== null ? money(tracker.best) : '—';
-      $('sessionWorst').textContent = tracker.worst !== null ? money(tracker.worst) : '—';
-      $('sessionTrend').textContent = tracker.trend || '—';
-
-      if (tracker.current !== null && tracker.best !== null) {
-        const vsBest = tracker.current - tracker.best;
-        if (vsBest === 0) {
-          $('sessionVsBest').textContent = 'Current offer matches the best seen this session.';
-        } else {
-          $('sessionVsBest').textContent = `Current vs best: ${vsBest > 0 ? '+' : ''}${money(vsBest)}`;
-        }
+    if (tracker.current !== null && tracker.best !== null) {
+      const vsBest = tracker.current - tracker.best;
+      if (vsBest === 0) {
+        $('sessionVsBest').textContent = 'Current offer matches the session high.';
       } else {
-        $('sessionVsBest').textContent = 'Enter cashout offers over time to track the session.';
+        $('sessionVsBest').textContent = `Vs high: ${vsBest > 0 ? '+' : ''}${money(vsBest)}`;
       }
     } else {
-      $('liveSessionCard').classList.add('hidden-soft');
-      $('notLiveNextCard').classList.remove('hidden-soft');
-
-      const nextData = getNextLegValue({
-        payout,
-        adjusted,
-        inferredLegs,
-        prob,
-        usedNeutralFallback
-      });
-
-      $('next').textContent = `${nextData.nextLabel} → ~${money(nextData.nextValue)}`;
-      $('nextSub').textContent = `${nextData.nextGain >= 0 ? '+' : ''}${money(nextData.nextGain)} from current estimate`;
-      $('assumptionNote').textContent = nextData.note || '';
+      $('sessionVsBest').textContent = 'Track multiple offers over time to compare movement.';
     }
+  }
+
+  function runHedgeMode() {
+    const stake = parseFloat($('stake').value);
+    const payout = parseFloat($('payout').value);
+    const cash = parseFloat($('cash').value);
+    const hedgeOdds = parseOdds($('hedgeOdds').value);
+
+    if (!Number.isFinite(stake) || !Number.isFinite(payout) || payout <= stake) {
+      hideResults('Enter a valid stake and payout. Payout must be greater than stake.');
+      return;
+    }
+
+    if (hedgeOdds === null) {
+      hideResults('Enter hedge odds to compare hedge vs cashout.');
+      return;
+    }
+
+    const hedgeDecimal = americanToDecimal(hedgeOdds);
+    const hedgeStake = state.hedgeMode === 'equal'
+      ? getEqualProfitHedgeStake(payout, hedgeDecimal)
+      : getHigherFloorHedgeStake(payout, hedgeDecimal, stake);
+
+    const ifOriginalWins = payout - stake - hedgeStake;
+    const ifHedgeWins = (hedgeStake * (hedgeDecimal - 1)) - stake;
+    const minLocked = Math.min(ifOriginalWins, ifHedgeWins);
+    const maxLocked = Math.max(ifOriginalWins, ifHedgeWins);
+
+    showResults();
+
+    $('evaluateDetails').classList.add('hidden-soft');
+    $('hedgeDetails').classList.remove('hidden-soft');
+
+    $('main').textContent = `Hedge stake ≈ ${money(hedgeStake)}`;
+    $('summaryLine').textContent = `Estimated locked range: ${money(minLocked)} to ${money(maxLocked)}`;
+
+    if (Number.isFinite(cash) && cash > 0) {
+      const cashProfit = cash - stake;
+      const hedgeAdvantage = minLocked - cashProfit;
+
+      if (hedgeAdvantage > 0) {
+        $('grade').className = 'text-2xl font-bold text-emerald-300';
+        $('grade').textContent = 'Hedge is better';
+        $('difference').textContent = `Hedge improves your locked floor by about ${money(hedgeAdvantage)}.`;
+      } else if (hedgeAdvantage < 0) {
+        $('grade').className = 'text-2xl font-bold text-amber-300';
+        $('grade').textContent = 'Cashout is better';
+        $('difference').textContent = `Cashout locks in about ${money(Math.abs(hedgeAdvantage))} more than this hedge floor.`;
+      } else {
+        $('grade').className = 'text-2xl font-bold text-lime-300';
+        $('grade').textContent = 'Almost equal';
+        $('difference').textContent = 'Cashout and hedge lock in about the same floor.';
+      }
+    } else {
+      $('grade').className = 'text-2xl font-bold text-slate-200';
+      $('grade').textContent = 'Add cashout offer';
+      $('difference').textContent = 'Enter the cashout offer to compare it with the hedge.';
+    }
+
+    $('hedgeStakeOut').textContent = money(hedgeStake);
+    $('hedgeOddsOut').textContent = hedgeOdds > 0 ? `+${hedgeOdds}` : `${hedgeOdds}`;
+    $('origWinsOut').textContent = money(ifOriginalWins);
+    $('hedgeWinsOut').textContent = money(ifHedgeWins);
+
+    if (Number.isFinite(cash) && cash > 0) {
+      const cashProfit = cash - stake;
+      const hedgeAdvantage = minLocked - cashProfit;
+
+      if (hedgeAdvantage > 0) {
+        $('hedgeCompareOut').textContent = `Hedge better by ${money(hedgeAdvantage)}`;
+        $('hedgeCompareSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(minLocked)}`;
+      } else if (hedgeAdvantage < 0) {
+        $('hedgeCompareOut').textContent = `Cashout better by ${money(Math.abs(hedgeAdvantage))}`;
+        $('hedgeCompareSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(minLocked)}`;
+      } else {
+        $('hedgeCompareOut').textContent = 'Too close to call';
+        $('hedgeCompareSub').textContent = `Cashout profit: ${money(cashProfit)} • Hedge floor: ${money(minLocked)}`;
+      }
+    } else {
+      $('hedgeCompareOut').textContent = 'Add cashout offer';
+      $('hedgeCompareSub').textContent = 'Enter the cashout offer to compare it with the hedge.';
+    }
+  }
+
+  function calc() {
+    if (state.decisionMode === 'evaluate') runEvaluateMode();
+    else runHedgeMode();
   }
 
   document.querySelectorAll('input').forEach((input) => {
@@ -684,39 +693,47 @@
     e.target.value = sanitizeOdds(e.target.value);
   });
 
-  $('liveBtn').onclick = () => {
-    state.mode = 'live';
-    updateModeButtons();
+  $('hedgeOdds').addEventListener('input', (e) => {
+    e.target.value = sanitizeOdds(e.target.value);
+  });
+
+  $('evaluateBtn').onclick = () => {
+    state.decisionMode = 'evaluate';
+    renderModeButtons();
     calc();
     $('odds').focus();
   };
 
-  $('notLiveBtn').onclick = () => {
-    state.mode = 'notLive';
-    updateModeButtons();
+  $('lockBtn').onclick = () => {
+    state.decisionMode = 'lock';
+    renderModeButtons();
     calc();
+    $('hedgeOdds').focus();
   };
 
   $('oddsBtn').onclick = () => {
-    state.input = 'odds';
-    updateModeButtons();
+    state.evalInput = 'odds';
+    renderModeButtons();
     calc();
     $('odds').focus();
   };
 
   $('probBtn').onclick = () => {
-    state.input = 'prob';
-    updateModeButtons();
+    state.evalInput = 'prob';
+    renderModeButtons();
     calc();
     $('prob').focus();
   };
 
-  $('addLeg').onclick = () => {
-    state.legs.push({
-      currentOdds: -110,
-      originalOdds: -110
-    });
-    renderLegs();
+  $('equalProfitBtn').onclick = () => {
+    state.hedgeMode = 'equal';
+    renderModeButtons();
+    calc();
+  };
+
+  $('maxFloorBtn').onclick = () => {
+    state.hedgeMode = 'floor';
+    renderModeButtons();
     calc();
   };
 
@@ -733,9 +750,8 @@
     }
   });
 
-  updateModeButtons();
+  renderModeButtons();
   updateDetailsPanel();
-  renderLegs();
   calc();
 </script>
 </body>
