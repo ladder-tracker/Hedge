@@ -2,646 +2,545 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Should I Cash Out / Hedge Tool</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  />
+  <title>One Leg Left</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root{
-      --bg:#0b1020;
-      --panel:#121933;
-      --panel2:#182142;
-      --text:#eef2ff;
-      --muted:#9aa4c7;
-      --green:#22c55e;
-      --red:#ef4444;
-      --yellow:#f59e0b;
-      --blue:#3b82f6;
-      --border:rgba(255,255,255,.08);
-      --shadow:0 10px 30px rgba(0,0,0,.25);
-      --radius:18px;
+    :root {
+      color-scheme: dark;
     }
 
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-      background:linear-gradient(180deg,#0a0f1d 0%, #10172f 100%);
-      color:var(--text);
-      padding:18px;
+    html {
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
     }
 
-    .wrap{
-      max-width:980px;
-      margin:0 auto;
-      display:grid;
-      gap:16px;
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 28%),
+        radial-gradient(circle at top right, rgba(168,85,247,0.14), transparent 30%),
+        linear-gradient(180deg, #08111f 0%, #0b1324 45%, #0f172a 100%);
+      color: #fff;
     }
 
-    .card{
-      background:linear-gradient(180deg,var(--panel) 0%, var(--panel2) 100%);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:16px;
-      box-shadow:var(--shadow);
+    .glass {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
     }
 
-    h1,h2,h3,p{margin:0}
-    h1{font-size:1.4rem; margin-bottom:6px}
-    h2{font-size:1rem; margin-bottom:12px}
-    h3{font-size:.95rem; margin-bottom:10px}
-    .sub{color:var(--muted); font-size:.92rem; line-height:1.4}
-
-    .grid{display:grid; gap:12px}
-    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
-    .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-    @media (max-width:740px){
-      .grid-2,.grid-3{grid-template-columns:1fr}
+    .glass-soft {
+      background: rgba(15, 23, 42, 0.56);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(148, 163, 184, 0.10);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
     }
 
-    label{
-      display:block;
-      font-size:.86rem;
-      color:var(--muted);
-      margin-bottom:6px;
+    .input-base {
+      width: 100%;
+      height: 58px;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(30, 41, 59, 0.92);
+      color: white;
+      padding: 0 18px;
+      font-size: 17px;
+      outline: none;
     }
 
-    input{
-      width:100%;
-      border:none;
-      outline:none;
-      background:#0d1430;
-      color:#fff;
-      border:1px solid rgba(255,255,255,.08);
-      padding:13px 12px;
-      border-radius:14px;
-      font-size:1rem;
+    .input-base::placeholder {
+      color: rgb(148 163 184);
     }
 
-    input:focus{
-      border-color:rgba(59,130,246,.65);
-      box-shadow:0 0 0 3px rgba(59,130,246,.15);
+    .input-base:focus {
+      border-color: rgba(96, 165, 250, 0.45);
+      box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.25) inset;
     }
 
-    .row{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
+    .hidden-soft {
+      display: none !important;
     }
 
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      background:#0c1430;
-      border:1px solid var(--border);
-      padding:8px 12px;
-      border-radius:999px;
-      font-size:.86rem;
-      color:var(--muted);
+    .mini-card {
+      border-radius: 22px;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 16px;
     }
 
-    .toggle{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      background:#0d1430;
-      border:1px solid var(--border);
-      padding:10px 12px;
-      border-radius:14px;
-      cursor:pointer;
-      user-select:none;
+    .details-toggle {
+      user-select: none;
     }
 
-    .toggle input{
-      width:auto;
-      transform:scale(1.1);
-      margin:0;
-      accent-color:var(--blue);
+    .info-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgb(148 163 184);
+      font-size: 13px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex: 0 0 auto;
     }
 
-    .kpi{
-      background:#0d1430;
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:14px;
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
 
-    .kpi .label{
-      color:var(--muted);
-      font-size:.82rem;
-      margin-bottom:6px;
+    .option-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255,255,255,0.08);
     }
 
-    .kpi .value{
-      font-size:1.35rem;
-      font-weight:800;
-      letter-spacing:-.02em;
-    }
-
-    .decision{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      padding:14px;
-      border-radius:16px;
-      border:1px solid var(--border);
-      background:#0d1430;
-    }
-
-    .decision .title{
-      font-size:1.05rem;
-      font-weight:800;
-      margin-bottom:4px;
-    }
-
-    .decision .desc{
-      color:var(--muted);
-      font-size:.92rem;
-      line-height:1.4;
-    }
-
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:84px;
-      padding:8px 10px;
-      border-radius:999px;
-      font-size:.82rem;
-      font-weight:700;
-      white-space:nowrap;
-    }
-
-    .good{background:rgba(34,197,94,.14); color:#86efac}
-    .bad{background:rgba(239,68,68,.14); color:#fca5a5}
-    .meh{background:rgba(245,158,11,.14); color:#fcd34d}
-
-    .bar-wrap{display:grid; gap:10px; margin-top:10px}
-    .bar-row{display:grid; gap:6px}
-    .bar-head{
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      font-size:.9rem;
-    }
-
-    .bar{
-      height:14px;
-      background:#0a1128;
-      border-radius:999px;
-      overflow:hidden;
-      border:1px solid var(--border);
-    }
-
-    .fill{height:100%; border-radius:999px}
-    .fill-blue{background:linear-gradient(90deg,#2563eb,#60a5fa)}
-    .fill-green{background:linear-gradient(90deg,#16a34a,#4ade80)}
-
-    .hedge-option{
-      background:#0d1430;
-      border:1px solid var(--border);
-      border-radius:16px;
-      padding:14px;
-      display:grid;
-      gap:8px;
-    }
-
-    .hedge-line{
-      font-size:1rem;
-      font-weight:700;
-      line-height:1.45;
-    }
-
-    .hedge-mini{
-      color:var(--muted);
-      font-size:.88rem;
-      line-height:1.4;
-    }
-
-    .muted{color:var(--muted)}
-    .small{font-size:.86rem}
-    .hidden{display:none}
-    .note{
-      padding:12px;
-      border-radius:14px;
-      background:#0d1430;
-      border:1px solid var(--border);
-      color:var(--muted);
-      font-size:.9rem;
-      line-height:1.45;
-    }
-
-    .divider{
-      height:1px;
-      background:var(--border);
-      margin:4px 0;
+    .option-row + .option-row {
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1>Should I Cash Out?</h1>
-      <p class="sub">Built for parlays with 1 or 2 legs remaining. Uses vigged implied probability only. Also shows simple hedge paths.</p>
-    </div>
-
-    <div class="card">
-      <h2>Ticket Details</h2>
-      <div class="grid grid-3">
-        <div>
-          <label for="stake">Original stake ($)</label>
-          <input id="stake" type="number" inputmode="decimal" placeholder="25">
-        </div>
-        <div>
-          <label for="betOdds">Original parlay odds (American)</label>
-          <input id="betOdds" type="number" inputmode="numeric" placeholder="+550">
-        </div>
-        <div>
-          <label for="cashout">Current cashout offer ($)</label>
-          <input id="cashout" type="number" inputmode="decimal" placeholder="78.50">
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="row" style="margin-bottom:12px;">
-        <div>
-          <h2 style="margin-bottom:4px;">Remaining Legs</h2>
-          <p class="sub">Enter the odds for the legs you still need to win. For hedge now, use the opposite-side odds for leg 1.</p>
-        </div>
-        <label class="toggle">
-          <input id="hasSecondLeg" type="checkbox">
-          <span>2 legs remaining</span>
-        </label>
-      </div>
-
-      <div class="grid grid-3">
-        <div>
-          <label for="leg1Odds">Remaining leg 1 odds</label>
-          <input id="leg1Odds" type="number" inputmode="numeric" placeholder="-110">
-        </div>
-        <div>
-          <label for="leg1HedgeOdds">Leg 1 hedge odds</label>
-          <input id="leg1HedgeOdds" type="number" inputmode="numeric" placeholder="-110">
-        </div>
-        <div id="leg2Wrap" class="hidden">
-          <label for="leg2Odds">Remaining leg 2 odds</label>
-          <input id="leg2Odds" type="number" inputmode="numeric" placeholder="-110">
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-3">
-      <div class="card kpi">
-        <div class="label">Potential payout if ticket wins</div>
-        <div class="value" id="winReturn">$0.00</div>
-      </div>
-      <div class="card kpi">
-        <div class="label">Hold value with vig</div>
-        <div class="value" id="holdValue">$0.00</div>
-      </div>
-      <div class="card kpi">
-        <div class="label">Cashout edge vs hold</div>
-        <div class="value" id="edgeValue">$0.00</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="decision">
-        <div>
-          <div class="title" id="decisionTitle">Enter your numbers</div>
-          <div class="desc" id="decisionDesc">Once the fields are filled in, the tool compares cashout vs estimated hold value.</div>
-        </div>
-        <div class="badge meh" id="decisionBadge">Waiting</div>
-      </div>
-
-      <div class="bar-wrap">
-        <div class="bar-row">
-          <div class="bar-head">
-            <span>Cashout offer</span>
-            <strong id="cashoutLabel">$0.00</strong>
-          </div>
-          <div class="bar"><div id="cashoutBar" class="fill fill-blue" style="width:0%"></div></div>
-        </div>
-
-        <div class="bar-row">
-          <div class="bar-head">
-            <span>Hold value</span>
-            <strong id="holdLabel">$0.00</strong>
-          </div>
-          <div class="bar"><div id="holdBar" class="fill fill-green" style="width:0%"></div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Hedge Options</h2>
-      <div class="grid grid-2">
-        <div class="hedge-option">
-          <div class="hedge-line" id="hedgeNowEqualLine">Hedge $0.00 on +100 to lock in $0.00 if leg 1 is the last leg</div>
-          <div class="hedge-mini" id="hedgeNowEqualMini">Balanced hedge for a 1-leg-remaining ticket.</div>
-        </div>
-
-        <div class="hedge-option">
-          <div class="hedge-line" id="hedgeNowCashoutLine">Hedge $0.00 on +100 to lock in $0.00 if leg 1 loses</div>
-          <div class="hedge-mini" id="hedgeNowCashoutMini">Targets the current cashout amount on the losing side of leg 1.</div>
-        </div>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="note" id="twoLegNote">
-        With 2 legs remaining, there is no perfect one-bet hedge that fully solves the whole ticket now unless you use more complex combinations. The clean approach is usually:
-        hedge leg 1 now if you want protection, then reassess and hedge the final leg only if leg 1 wins.
-      </div>
-
-      <div class="grid grid-2" style="margin-top:12px;">
-        <div class="hedge-option">
-          <div class="hedge-line" id="projectedAfterLeg1WinLine">If leg 1 wins, projected value before final leg: $0.00</div>
-          <div class="hedge-mini" id="projectedAfterLeg1WinMini">Useful only when 2 legs remain.</div>
-        </div>
-
-        <div class="hedge-option">
-          <div class="hedge-line" id="finalLegPlanLine">Then on the final leg, you can hedge later based on the updated spot</div>
-          <div class="hedge-mini" id="finalLegPlanMini">This gives a cleaner hedge than forcing a full 2-leg hedge right now.</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Summary</h2>
-      <div class="grid grid-2">
-        <div class="kpi">
-          <div class="label">Estimated ticket win probability</div>
-          <div class="value" id="ticketProb">0.0%</div>
-        </div>
-        <div class="kpi">
-          <div class="label">Leg count used</div>
-          <div class="value" id="legCountUsed">1</div>
-        </div>
-      </div>
-      <p class="muted small" style="margin-top:12px;" id="summaryText">
-        This compares your cashout offer against the vigged market value of holding the remaining legs.
+  <div class="max-w-xl mx-auto p-4 pb-10 space-y-4">
+    <div class="pt-2">
+      <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">One Leg Left</h1>
+      <p class="text-slate-300 mt-2 text-sm sm:text-base">
+        Compare hold, cashout, and hedge for a single remaining leg.
       </p>
+    </div>
+
+    <div class="glass rounded-[28px] p-4 sm:p-5 space-y-4">
+      <div class="space-y-3">
+        <input
+          id="stake"
+          class="input-base"
+          inputmode="decimal"
+          placeholder="Stake"
+          aria-label="Stake"
+        />
+        <input
+          id="payout"
+          class="input-base"
+          inputmode="decimal"
+          placeholder="Total payout"
+          aria-label="Total payout"
+        />
+        <input
+          id="cash"
+          class="input-base"
+          inputmode="decimal"
+          placeholder="Cashout offer"
+          aria-label="Cashout offer"
+        />
+        <input
+          id="remainingOdds"
+          class="input-base"
+          inputmode="text"
+          placeholder="Remaining leg odds"
+          aria-label="Remaining leg odds"
+        />
+
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <label for="actualHedgeOdds" class="text-sm text-slate-300">
+              Actual hedge line available (optional)
+            </label>
+            <button
+              id="hedgeInfoBtn"
+              type="button"
+              class="info-btn"
+              aria-label="About actual hedge line"
+            >
+              i
+            </button>
+          </div>
+          <input
+            id="actualHedgeOdds"
+            class="input-base"
+            inputmode="text"
+            placeholder="Actual hedge line available"
+            aria-label="Actual hedge line available"
+          />
+        </div>
+      </div>
+            <div id="result" class="hidden-soft glass-soft rounded-[28px] p-5 space-y-4">
+        <div class="space-y-2">
+          <div id="main" class="text-3xl sm:text-4xl font-bold leading-tight"></div>
+          <div id="grade" class="text-2xl font-bold"></div>
+          <div id="difference" class="text-slate-300 text-lg"></div>
+          <div id="summaryLine" class="text-slate-300 text-base"></div>
+        </div>
+
+        <div id="hedgeOptionsWrap" class="space-y-3">
+          <div class="text-sm text-slate-400">Hedge options</div>
+
+          <div class="option-row">
+            <div>
+              <div id="cashOptionTitle" class="text-lg font-bold"></div>
+              <div id="cashOptionSub" class="mt-1 text-slate-300 text-sm"></div>
+            </div>
+            <div id="cashOptionProfit" class="text-xl font-bold"></div>
+          </div>
+
+          <div id="estimatedHedgeRow" class="option-row">
+            <div>
+              <div id="estimatedHedgeTitle" class="text-lg font-bold"></div>
+              <div id="estimatedHedgeSub" class="mt-1 text-slate-300 text-sm"></div>
+            </div>
+            <div id="estimatedHedgeProfit" class="text-xl font-bold"></div>
+          </div>
+
+          <div id="actualHedgeRow" class="option-row hidden-soft">
+            <div>
+              <div id="actualHedgeTitle" class="text-lg font-bold"></div>
+              <div id="actualHedgeSub" class="mt-1 text-slate-300 text-sm"></div>
+            </div>
+            <div id="actualHedgeProfit" class="text-xl font-bold"></div>
+          </div>
+
+          <div id="noHedgeWrap" class="mini-card hidden-soft">
+            <div class="text-lg font-bold">No hedge line available</div>
+            <div class="mt-2 text-slate-300 text-sm">
+              Compare cashout versus hold only.
+            </div>
+          </div>
+        </div>
+
+        <div
+          id="detailsToggle"
+          class="details-toggle flex items-center justify-between rounded-2xl bg-slate-900/50 border border-white/10 px-4 py-3 cursor-pointer"
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+        >
+          <span class="text-sm text-slate-200 font-medium">Details</span>
+          <span id="detailsChevron" class="text-slate-400 text-sm">Show</span>
+        </div>
+
+        <div id="detailsPanel" class="hidden-soft space-y-4">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-sm gap-3">
+              <span class="text-slate-300">Cashout value</span>
+              <span id="ratioText" class="text-slate-100 font-semibold"></span>
+            </div>
+
+            <div class="h-3 rounded-full bg-slate-700 overflow-hidden">
+              <div id="qualityBar" class="h-full rounded-full transition-all duration-200"></div>
+            </div>
+
+            <div class="text-slate-300 text-base">
+              <span class="text-slate-400">Fair range:</span>
+              <span id="range"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="emptyState"
+        class="rounded-2xl bg-slate-900/40 border border-white/10 px-4 py-4 text-sm text-slate-400"
+      >
+        Enter your bet details to get started.
+      </div>
     </div>
   </div>
 
+  <div id="infoModal" class="modal-backdrop hidden-soft" aria-hidden="true">
+    <div class="w-full max-w-sm rounded-[24px] glass p-5 space-y-4">
+      <div class="text-xl font-bold">Actual hedge line</div>
+      <div class="text-slate-300 text-sm leading-6">
+        Add the actual opposite-side line you can bet for a better estimate.
+        Leave it blank and the tool uses an estimated line.
+      </div>
+      <button
+        id="closeModalBtn"
+        type="button"
+        class="w-full h-12 rounded-2xl bg-slate-700 font-semibold"
+      >
+        Got it
+      </button>
+    </div>
+  </div>
   <script>
-    const els = {
-      stake: document.getElementById('stake'),
-      betOdds: document.getElementById('betOdds'),
-      cashout: document.getElementById('cashout'),
+  const state = {
+    detailsOpen: false
+  };
 
-      hasSecondLeg: document.getElementById('hasSecondLeg'),
-      leg1Odds: document.getElementById('leg1Odds'),
-      leg1HedgeOdds: document.getElementById('leg1HedgeOdds'),
-      leg2Odds: document.getElementById('leg2Odds'),
-      leg2Wrap: document.getElementById('leg2Wrap'),
+  const $ = (id) => document.getElementById(id);
 
-      winReturn: document.getElementById('winReturn'),
-      holdValue: document.getElementById('holdValue'),
-      edgeValue: document.getElementById('edgeValue'),
+  function money(n) {
+    return `$${Number(n || 0).toFixed(2)}`;
+  }
 
-      decisionTitle: document.getElementById('decisionTitle'),
-      decisionDesc: document.getElementById('decisionDesc'),
-      decisionBadge: document.getElementById('decisionBadge'),
+  function pct(n) {
+    return `${(Number(n || 0) * 100).toFixed(1)}%`;
+  }
 
-      cashoutLabel: document.getElementById('cashoutLabel'),
-      holdLabel: document.getElementById('holdLabel'),
-      cashoutBar: document.getElementById('cashoutBar'),
-      holdBar: document.getElementById('holdBar'),
+  function clamp(n, min, max) {
+    return Math.min(Math.max(n, min), max);
+  }
 
-      hedgeNowEqualLine: document.getElementById('hedgeNowEqualLine'),
-      hedgeNowEqualMini: document.getElementById('hedgeNowEqualMini'),
-      hedgeNowCashoutLine: document.getElementById('hedgeNowCashoutLine'),
-      hedgeNowCashoutMini: document.getElementById('hedgeNowCashoutMini'),
+  function sanitizeOdds(v) {
+    if (!v) return '';
+    v = String(v).trim().replace(/\s+/g, '').replace(/[^0-9+-]/g, '');
+    if (v.length > 1) v = v[0] + v.slice(1).replace(/[+-]/g, '');
+    if (/^\d+$/.test(v)) v = '+' + v;
+    return v;
+  }
 
-      projectedAfterLeg1WinLine: document.getElementById('projectedAfterLeg1WinLine'),
-      projectedAfterLeg1WinMini: document.getElementById('projectedAfterLeg1WinMini'),
-      finalLegPlanLine: document.getElementById('finalLegPlanLine'),
-      finalLegPlanMini: document.getElementById('finalLegPlanMini'),
+  function parseOdds(v) {
+    if (!v) return null;
+    const cleaned = sanitizeOdds(v);
+    if (!/^[+-]?\d+$/.test(cleaned)) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) && n !== 0 ? n : null;
+  }
 
-      ticketProb: document.getElementById('ticketProb'),
-      legCountUsed: document.getElementById('legCountUsed'),
-      summaryText: document.getElementById('summaryText'),
-      twoLegNote: document.getElementById('twoLegNote')
+  function oddsToProb(o) {
+    return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
+  }
+
+  function probToAmerican(prob) {
+    if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
+    if (prob >= 0.5) return -Math.round((prob / (1 - prob)) * 100);
+    return Math.round(((1 - prob) / prob) * 100);
+  }
+
+  function americanToDecimal(o) {
+    return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+  }
+
+  function qualityLabel(ratio) {
+    if (ratio >= 1.05) return { label: 'Strong', color: 'text-emerald-300', bar: 'bg-emerald-500' };
+    if (ratio >= 0.90) return { label: 'Fair', color: 'text-lime-300', bar: 'bg-lime-500' };
+    if (ratio >= 0.75) return { label: 'Slightly discounted', color: 'text-yellow-300', bar: 'bg-yellow-500' };
+    if (ratio >= 0.60) return { label: 'Discounted', color: 'text-amber-300', bar: 'bg-amber-500' };
+    return { label: 'Poor', color: 'text-rose-300', bar: 'bg-rose-500' };
+  }
+
+  function getOriginalCombinedOdds(stake, payout) {
+    if (!Number.isFinite(stake) || !Number.isFinite(payout) || stake <= 0 || payout <= stake) return null;
+    const decimal = payout / stake;
+    return Math.round((decimal - 1) * 100);
+  }
+
+  function estimateOppositeLineWithVig(remainingOdds, hold = 0.04) {
+    const remainingProb = oddsToProb(remainingOdds);
+    const oppositeProb = 1 - remainingProb;
+    const viggedOppositeProb = clamp(oppositeProb * (1 + hold), 0.0001, 0.9999);
+    const estimatedOppositeLine = probToAmerican(viggedOppositeProb);
+
+    return {
+      remainingProb,
+      estimatedOppositeLine
     };
+  }
 
-    function n(v){
-      const x = parseFloat(v);
-      return Number.isFinite(x) ? x : 0;
+  function hideResults(message) {
+    $('result').classList.add('hidden-soft');
+    $('emptyState').classList.remove('hidden-soft');
+    $('emptyState').textContent = message;
+  }
+
+  function showResults() {
+    $('result').classList.remove('hidden-soft');
+    $('emptyState').classList.add('hidden-soft');
+  }
+
+  function updateDetailsPanel() {
+    $('detailsPanel').classList.toggle('hidden-soft', !state.detailsOpen);
+    $('detailsToggle').setAttribute('aria-expanded', String(state.detailsOpen));
+    $('detailsChevron').textContent = state.detailsOpen ? 'Hide' : 'Show';
+  }
+
+  function openModal() {
+    $('infoModal').classList.remove('hidden-soft');
+    $('infoModal').setAttribute('aria-hidden', 'false');
+  }
+
+  function closeModal() {
+    $('infoModal').classList.add('hidden-soft');
+    $('infoModal').setAttribute('aria-hidden', 'true');
+  }
+
+  function setOptionRow(titleEl, subEl, profitEl, stake, odds, lockedProfit, prefix = 'Hedge') {
+    titleEl.textContent = `${prefix} ${money(stake)} at ${odds > 0 ? `+${odds}` : odds}`;
+    subEl.textContent = `Locks in ${money(lockedProfit)} profit`;
+    profitEl.textContent = money(lockedProfit);
+  }
+
+  function calc() {
+    const stake = parseFloat($('stake').value);
+    const payout = parseFloat($('payout').value);
+    const cash = parseFloat($('cash').value);
+    const remainingOdds = parseOdds($('remainingOdds').value);
+    const actualHedgeOdds = parseOdds($('actualHedgeOdds').value);
+
+    if (!Number.isFinite(stake) || !Number.isFinite(payout) || payout <= stake) {
+      hideResults('Enter a valid stake and payout. Payout must be greater than stake.');
+      return;
     }
 
-    function isValidAmerican(odds){
-      return Number.isFinite(odds) && odds !== 0 && Math.abs(odds) >= 100;
+    if (remainingOdds === null) {
+      hideResults('Enter the remaining leg odds.');
+      return;
     }
 
-    function americanToDecimal(odds){
-      if (!isValidAmerican(odds)) return null;
-      return odds > 0 ? 1 + (odds / 100) : 1 + (100 / Math.abs(odds));
-    }
+    const { remainingProb, estimatedOppositeLine } = estimateOppositeLineWithVig(remainingOdds, 0.04);
+    const fairValue = payout * remainingProb;
+    const fairProfit = fairValue - stake;
+    const low = fairValue * 0.92;
+    const high = fairValue * 1.08;
+    const originalCombined = getOriginalCombinedOdds(stake, payout);
 
-    function impliedProb(odds){
-      if (!isValidAmerican(odds)) return null;
-      return odds > 0 ? 100 / (odds + 100) : Math.abs(odds) / (Math.abs(odds) + 100);
-    }
+    showResults();
 
-    function formatMoney(v){
-      if (!Number.isFinite(v)) return '$0.00';
-      return new Intl.NumberFormat('en-US', {
-        style:'currency',
-        currency:'USD',
-        maximumFractionDigits:2
-      }).format(v);
-    }
+    $('main').textContent = `Fair value ≈ ${money(fairValue)}`;
+    $('summaryLine').textContent = `Win ${pct(remainingProb)} • 1 leg left • Original: ${originalCombined ? `+${originalCombined}` : '—'}`;
 
-    function formatPct(v){
-      if (!Number.isFinite(v)) return '0.0%';
-      return `${(v * 100).toFixed(1)}%`;
-    }
+    let gradeText = 'Add cashout offer';
+    let gradeClass = 'text-slate-200';
+    let differenceText = 'Add the cashout offer to compare it to fair value.';
+    let ratioText = 'No offer entered';
+    let qualityBarWidth = 0;
+    let qualityBarClass = 'bg-slate-600';
+    let cashProfit = null;
 
-    function formatOdds(v){
-      if (!Number.isFinite(v) || v === 0) return '+100';
-      return v > 0 ? `+${Math.round(v)}` : `${Math.round(v)}`;
-    }
+    if (Number.isFinite(cash) && cash > 0) {
+      cashProfit = cash - stake;
+      const ratio = cash / fairValue;
+      const quality = qualityLabel(ratio);
+      const diff = cash - fairValue;
 
-    function setBadge(type, text){
-      els.decisionBadge.className = `badge ${type}`;
-      els.decisionBadge.textContent = text;
-    }
+      gradeText = `${quality.label} → ${money(cash)}`;
+      gradeClass = quality.color;
+      ratioText = `${(ratio * 100).toFixed(0)}% of fair value`;
+      qualityBarWidth = Math.min(ratio * 100, 100);
+      qualityBarClass = quality.bar;
 
-    function updateLeg2Visibility(){
-      els.leg2Wrap.classList.toggle('hidden', !els.hasSecondLeg.checked);
-      compute();
-    }
-
-    function compute(){
-      const stake = n(els.stake.value);
-      const betOdds = n(els.betOdds.value);
-      const cashout = n(els.cashout.value);
-
-      const leg1Odds = n(els.leg1Odds.value);
-      const leg1HedgeOdds = n(els.leg1HedgeOdds.value);
-      const useSecondLeg = els.hasSecondLeg.checked;
-      const leg2Odds = n(els.leg2Odds.value);
-
-      const betDec = americanToDecimal(betOdds);
-      const leg1Prob = impliedProb(leg1Odds);
-      const leg2Prob = useSecondLeg ? impliedProb(leg2Odds) : 1;
-      const hedgeDec = americanToDecimal(leg1HedgeOdds);
-
-      const winReturn = betDec ? stake * betDec : 0;
-      const ticketProb = (leg1Prob && leg2Prob) ? leg1Prob * leg2Prob : null;
-      const holdValue = ticketProb !== null ? winReturn * ticketProb : 0;
-      const edge = cashout - holdValue;
-
-      els.winReturn.textContent = formatMoney(winReturn);
-      els.holdValue.textContent = formatMoney(holdValue);
-      els.edgeValue.textContent = (edge >= 0 ? '+' : '-') + formatMoney(Math.abs(edge));
-      els.ticketProb.textContent = formatPct(ticketProb || 0);
-      els.legCountUsed.textContent = useSecondLeg ? '2' : '1';
-
-      els.cashoutLabel.textContent = formatMoney(cashout);
-      els.holdLabel.textContent = formatMoney(holdValue);
-
-      const maxBar = Math.max(cashout, holdValue, 1);
-      els.cashoutBar.style.width = `${Math.min(100, (cashout / maxBar) * 100)}%`;
-      els.holdBar.style.width = `${Math.min(100, (holdValue / maxBar) * 100)}%`;
-
-      els.twoLegNote.style.display = useSecondLeg ? 'block' : 'none';
-
-      if (!stake || !betDec || !cashout || !leg1Prob || !hedgeDec || (useSecondLeg && !leg2Prob)) {
-        els.decisionTitle.textContent = 'Enter your numbers';
-        els.decisionDesc.textContent = 'Fill in the ticket, cashout, remaining leg 1 odds, hedge odds, and optional leg 2.';
-        setBadge('meh', 'Waiting');
-        renderHedges({
-          winReturn,
-          cashout,
-          hedgeDec,
-          leg1Prob,
-          leg2Prob,
-          useSecondLeg
-        });
-        return;
-      }
-
-      if (edge > 1.5) {
-        els.decisionTitle.textContent = 'Cash out';
-        els.decisionDesc.textContent = `Your cashout is ${formatMoney(edge)} better than the vigged hold value estimate.`;
-        setBadge('good', 'Cash Out');
-      } else if (edge < -1.5) {
-        els.decisionTitle.textContent = 'Hold';
-        els.decisionDesc.textContent = `Holding is worth about ${formatMoney(Math.abs(edge))} more than the current cashout offer.`;
-        setBadge('bad', 'Hold');
+      if (diff >= 0) {
+        differenceText = `Offer is about ${money(Math.abs(diff))} above fair value.`;
       } else {
-        els.decisionTitle.textContent = 'Close decision';
-        els.decisionDesc.textContent = `Cashout and hold value are close. Difference is about ${formatMoney(Math.abs(edge))}.`;
-        setBadge('meh', 'Close');
+        differenceText = `Giving up about ${money(Math.abs(diff))} vs fair value.`;
       }
-
-      if (useSecondLeg) {
-        els.summaryText.textContent = 'With 2 legs remaining, the tool estimates ticket value using the product of both vigged implied probabilities. A perfect full hedge now is usually not clean, so the best practical approach is often hedge leg 1 now, then reassess the final leg later.';
-      } else {
-        els.summaryText.textContent = 'With 1 leg remaining, the hold value is simply potential payout multiplied by the vigged implied probability of the final leg.';
-      }
-
-      renderHedges({
-        winReturn,
-        cashout,
-        hedgeDec,
-        leg1Prob,
-        leg2Prob,
-        useSecondLeg
-      });
     }
 
-    function renderHedges({ winReturn, cashout, hedgeDec, leg1Prob, leg2Prob, useSecondLeg }){
-      if (!winReturn || !hedgeDec) {
-        els.hedgeNowEqualLine.textContent = 'Hedge $0.00 on +100 to lock in $0.00 if leg 1 is the last leg';
-        els.hedgeNowEqualMini.textContent = 'Balanced hedge for a 1-leg-remaining ticket.';
-        els.hedgeNowCashoutLine.textContent = 'Hedge $0.00 on +100 to lock in $0.00 if leg 1 loses';
-        els.hedgeNowCashoutMini.textContent = 'Targets the current cashout amount on the losing side of leg 1.';
-        els.projectedAfterLeg1WinLine.textContent = 'If leg 1 wins, projected value before final leg: $0.00';
-        els.projectedAfterLeg1WinMini.textContent = 'Useful only when 2 legs remain.';
-        els.finalLegPlanLine.textContent = 'Then on the final leg, you can hedge later based on the updated spot';
-        els.finalLegPlanMini.textContent = 'This gives a cleaner hedge than forcing a full 2-leg hedge right now.';
-        return;
-      }
+    $('grade').className = `text-2xl font-bold ${gradeClass}`;
+    $('grade').textContent = gradeText;
+    $('difference').textContent = differenceText;
+    $('ratioText').textContent = ratioText;
+    $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${qualityBarClass}`;
+    $('qualityBar').style.width = `${qualityBarWidth}%`;
+    $('range').textContent = `${money(low)} – ${money(high)}`;
 
-      const hedgeOddsDisplay = formatOdds(n(els.leg1HedgeOdds.value));
+    $('cashOptionTitle').textContent = 'Cash out now';
+    $('cashOptionSub').textContent = cashProfit !== null
+      ? `Locks in ${money(cashProfit)} profit`
+      : 'Enter a cashout offer';
+    $('cashOptionProfit').textContent = cashProfit !== null ? money(cashProfit) : '—';
 
-      if (!useSecondLeg) {
-        const equalHedge = winReturn / (hedgeDec + 1);
-        const equalLock = winReturn - equalHedge;
-
-        const cashoutMatchHedge = cashout / hedgeDec;
-        const originalWinProfit = winReturn - cashoutMatchHedge;
-        const hedgeLoseProfit = cashoutMatchHedge * hedgeDec;
-
-        els.hedgeNowEqualLine.textContent =
-          `Hedge ${formatMoney(equalHedge)} on ${hedgeOddsDisplay} to lock in ${formatMoney(equalLock)}`;
-
-        els.hedgeNowEqualMini.textContent =
-          `If your ticket wins: ${formatMoney(equalLock)}. If the final leg loses: ${formatMoney(equalLock)}.`;
-
-        els.hedgeNowCashoutLine.textContent =
-          `Hedge ${formatMoney(cashoutMatchHedge)} on ${hedgeOddsDisplay} to lock in ${formatMoney(hedgeLoseProfit)} if leg 1 loses`;
-
-        els.hedgeNowCashoutMini.textContent =
-          `If your ticket wins: ${formatMoney(originalWinProfit)}. If leg 1 loses: ${formatMoney(hedgeLoseProfit)}.`;
-
-        els.projectedAfterLeg1WinLine.textContent = 'No extra leg remaining';
-        els.projectedAfterLeg1WinMini.textContent = 'This section is only relevant when 2 legs remain.';
-        els.finalLegPlanLine.textContent = 'Single-leg hedge shown above';
-        els.finalLegPlanMini.textContent = 'No future hedge step needed because this is the final leg.';
-        return;
-      }
-
-      const projectedValueAfterLeg1Wins = leg2Prob ? winReturn * leg2Prob : 0;
-      const hedgeNowToRecoverCashoutIfLeg1Loses = cashout / hedgeDec;
-      const profitIfLeg1Loses = hedgeNowToRecoverCashoutIfLeg1Loses * hedgeDec;
-      const profitIfTicketStillAliveAfterLeg1 = projectedValueAfterLeg1Wins - hedgeNowToRecoverCashoutIfLeg1Loses;
-
-      els.hedgeNowEqualLine.textContent =
-        `Hedge ${formatMoney(hedgeNowToRecoverCashoutIfLeg1Loses)} on ${hedgeOddsDisplay} to recover about ${formatMoney(profitIfLeg1Loses)} if leg 1 loses`;
-
-      els.hedgeNowEqualMini.textContent =
-        `With 2 legs left, a perfect all-outcomes hedge now is not simple. This is a practical protection hedge on leg 1.`;
-
-      els.hedgeNowCashoutLine.textContent =
-        `Hedge ${formatMoney(hedgeNowToRecoverCashoutIfLeg1Loses)} on ${hedgeOddsDisplay} now, then reassess if leg 1 wins`;
-
-      els.hedgeNowCashoutMini.textContent =
-        `If leg 1 loses: about ${formatMoney(profitIfLeg1Loses)}. If leg 1 wins: ticket remains alive and your projected value is still about ${formatMoney(profitIfTicketStillAliveAfterLeg1)} before the final hedge step.`;
-
-      els.projectedAfterLeg1WinLine.textContent =
-        `If leg 1 wins, projected value before final leg: ${formatMoney(projectedValueAfterLeg1Wins)}`;
-
-      els.projectedAfterLeg1WinMini.textContent =
-        `That estimate uses the vigged implied probability of leg 2 only.`;
-
-      els.finalLegPlanLine.textContent =
-        `Then hedge the final leg later only if the ticket gets there`;
-
-      els.finalLegPlanMini.textContent =
-        `That is usually cleaner than trying to force a full 2-leg hedge upfront.`;
+    if (estimatedOppositeLine === null) {
+      $('estimatedHedgeRow').classList.add('hidden-soft');
+      $('actualHedgeRow').classList.add('hidden-soft');
+      $('noHedgeWrap').classList.remove('hidden-soft');
+      return;
     }
 
-    [
-      els.stake,
-      els.betOdds,
-      els.cashout,
-      els.leg1Odds,
-      els.leg1HedgeOdds,
-      els.leg2Odds
-    ].forEach(el => el.addEventListener('input', compute));
+    $('noHedgeWrap').classList.add('hidden-soft');
 
-    els.hasSecondLeg.addEventListener('change', updateLeg2Visibility);
+    const estimatedDecimal = americanToDecimal(estimatedOppositeLine);
+    const estimatedStake = payout / estimatedDecimal;
+    const estimatedIfOriginalWins = payout - stake - estimatedStake;
+    const estimatedIfHedgeWins = (estimatedStake * (estimatedDecimal - 1)) - stake;
+    const estimatedFloor = Math.min(estimatedIfOriginalWins, estimatedIfHedgeWins);
 
-    updateLeg2Visibility();
-    compute();
-  </script>
+    $('estimatedHedgeRow').classList.remove('hidden-soft');
+    setOptionRow(
+      $('estimatedHedgeTitle'),
+      $('estimatedHedgeSub'),
+      $('estimatedHedgeProfit'),
+      estimatedStake,
+      estimatedOppositeLine,
+      estimatedFloor
+    );
+
+    if (actualHedgeOdds !== null) {
+      const actualDecimal = americanToDecimal(actualHedgeOdds);
+      const actualStake = payout / actualDecimal;
+      const actualIfOriginalWins = payout - stake - actualStake;
+      const actualIfHedgeWins = (actualStake * (actualDecimal - 1)) - stake;
+      const actualFloor = Math.min(actualIfOriginalWins, actualIfHedgeWins);
+
+      $('actualHedgeRow').classList.remove('hidden-soft');
+      setOptionRow(
+        $('actualHedgeTitle'),
+        $('actualHedgeSub'),
+        $('actualHedgeProfit'),
+        actualStake,
+        actualHedgeOdds,
+        actualFloor
+      );
+    } else {
+      $('actualHedgeRow').classList.add('hidden-soft');
+    }
+  }
+
+  document.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('input', calc);
+  });
+
+  $('remainingOdds').addEventListener('input', (e) => {
+    e.target.value = sanitizeOdds(e.target.value);
+  });
+
+  $('actualHedgeOdds').addEventListener('input', (e) => {
+    e.target.value = sanitizeOdds(e.target.value);
+  });
+
+  $('detailsToggle').onclick = () => {
+    state.detailsOpen = !state.detailsOpen;
+    updateDetailsPanel();
+  };
+
+  $('detailsToggle').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      state.detailsOpen = !state.detailsOpen;
+      updateDetailsPanel();
+    }
+  });
+
+  $('hedgeInfoBtn').onclick = openModal;
+  $('closeModalBtn').onclick = closeModal;
+  $('infoModal').addEventListener('click', (e) => {
+    if (e.target === $('infoModal')) closeModal();
+  });
+
+  updateDetailsPanel();
+  calc();
+</script>
 </body>
 </html>
