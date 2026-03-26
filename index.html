@@ -124,6 +124,14 @@
       text-align: right;
       margin-top: 4px;
     }
+
+    .warn-card {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(120, 53, 15, 0.18);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      color: rgb(253 224 71);
+    }
   </style>
 </head>
 <body>
@@ -140,36 +148,35 @@
         <input id="stake" class="input-base" inputmode="decimal" placeholder="Stake" />
         <input id="payout" class="input-base" inputmode="decimal" placeholder="Total payout" />
         <input id="cashout" class="input-base" inputmode="decimal" placeholder="Cashout offer" />
-        <input id="remainingOdds" class="input-base" inputmode="text" placeholder="Remaining leg odds" />
+        <input id="remainingOdds" class="input-base" inputmode="text" placeholder="Current market odds for remaining leg" />
 
         <div class="space-y-2">
           <div class="flex items-center gap-2">
             <label for="actualHedgeOdds" class="text-sm text-slate-300">
               Actual hedge line available (optional)
             </label>
-            <button
-              id="hedgeInfoBtn"
-              type="button"
-              class="info-btn"
-              aria-label="About actual hedge line"
-            >
-              i
-            </button>
+            <button id="hedgeInfoBtn" type="button" class="info-btn" aria-label="About actual hedge line">i</button>
           </div>
           <input
             id="actualHedgeOdds"
             class="input-base"
             inputmode="text"
-            placeholder="Actual hedge line"
+            placeholder="Actual opposite-side hedge line"
           />
         </div>
       </div>
-            <div id="resultWrap" class="hidden-soft space-y-4">
+
+      <div id="resultWrap" class="hidden-soft space-y-4">
         <div class="glass-soft rounded-[26px] p-5 space-y-3">
           <div id="fairValueEl" class="text-3xl sm:text-4xl font-bold leading-tight"></div>
           <div id="cashoutGradeEl" class="text-2xl font-bold"></div>
           <div id="cashoutDiffEl" class="text-slate-300 text-lg"></div>
           <div id="summaryEl" class="text-slate-300 text-base"></div>
+        </div>
+
+        <div id="warningCard" class="warn-card hidden-soft">
+          <div class="font-semibold">Check the remaining-leg odds</div>
+          <div id="warningText" class="mt-2 text-sm leading-6 text-yellow-100"></div>
         </div>
 
         <div id="hedgeSection" class="space-y-3">
@@ -264,7 +271,8 @@
       </button>
     </div>
   </div>
-    <script>
+
+  <script>
     const state = {
       detailsOpen: false
     };
@@ -336,13 +344,9 @@
     }
 
     function getFeasibility(hedgeStake, stake, cashout) {
-      if (!Number.isFinite(hedgeStake) || hedgeStake <= 0) {
-        return 'No hedge';
-      }
-
+      if (!Number.isFinite(hedgeStake) || hedgeStake <= 0) return 'No hedge';
       const cashRatio = Number.isFinite(cashout) && cashout > 0 ? hedgeStake / cashout : null;
       const stakeRatio = Number.isFinite(stake) && stake > 0 ? hedgeStake / stake : null;
-
       const driver = cashRatio !== null ? cashRatio : stakeRatio;
 
       if (driver === null) return 'Unknown';
@@ -356,6 +360,7 @@
       $('resultWrap').classList.add('hidden-soft');
       $('emptyState').classList.remove('hidden-soft');
       $('emptyState').textContent = message;
+      $('warningCard').classList.add('hidden-soft');
     }
 
     function showResults() {
@@ -385,6 +390,29 @@
       profitEl.textContent = money(lockedProfit);
     }
 
+    function maybeShowStaleOddsWarning({
+      cashout,
+      fairValue,
+      cashoutRatio,
+      remainingOdds,
+      actualHedgeOdds
+    }) {
+      $('warningCard').classList.add('hidden-soft');
+
+      if (!Number.isFinite(cashout) || cashout <= 0) return;
+      if (actualHedgeOdds !== null) return;
+
+      const longshot = remainingOdds >= 10000;
+      const hugeGap = cashoutRatio >= 1.75;
+      const moderateGap = cashoutRatio >= 1.30 && remainingOdds >= 5000;
+
+      if (longshot && (hugeGap || moderateGap)) {
+        $('warningCard').classList.remove('hidden-soft');
+        $('warningText').textContent =
+          'This cashout is much higher than the entered odds imply. For futures and outrights, the odds shown on the original slip are often stale. Use the current market price or an actual hedge line if you can find one.';
+      }
+    }
+
     function calc() {
       const stake = parseFloat($('stake').value);
       const payout = parseFloat($('payout').value);
@@ -398,7 +426,7 @@
       }
 
       if (remainingOdds === null) {
-        hideResults('Enter the remaining leg odds.');
+        hideResults('Enter the current market odds for the remaining leg.');
         return;
       }
 
@@ -421,21 +449,25 @@
       let qualityBarWidth = 0;
       let qualityBarClass = 'bg-slate-600';
       let cashoutProfit = null;
+      let cashoutRatio = null;
 
       if (Number.isFinite(cashout) && cashout > 0) {
         cashoutProfit = cashout - stake;
-        const ratio = cashout / fairValue;
-        const quality = qualityLabel(ratio);
+        cashoutRatio = cashout / fairValue;
+        const quality = qualityLabel(cashoutRatio);
         const diff = cashout - fairValue;
+        const suspicious = actualHedgeOdds === null && remainingOdds >= 5000 && cashoutRatio >= 1.30;
 
-        gradeText = `${quality.label} → ${money(cashout)}`;
-        gradeClass = quality.color;
-        ratioText = `${(ratio * 100).toFixed(0)}% of fair value`;
-        qualityBarWidth = Math.min(ratio * 100, 100);
-        qualityBarClass = quality.bar;
+        gradeText = suspicious ? `Check odds → ${money(cashout)}` : `${quality.label} → ${money(cashout)}`;
+        gradeClass = suspicious ? 'text-yellow-300' : quality.color;
+        ratioText = `${(cashoutRatio * 100).toFixed(0)}% of fair value`;
+        qualityBarWidth = Math.min(cashoutRatio * 100, 100);
+        qualityBarClass = suspicious ? 'bg-yellow-500' : quality.bar;
 
         if (diff >= 0) {
-          differenceText = `Offer is about ${money(Math.abs(diff))} above fair value.`;
+          differenceText = suspicious
+            ? `Cashout is about ${money(Math.abs(diff))} above fair value based on the entered odds.`
+            : `Offer is about ${money(Math.abs(diff))} above fair value.`;
         } else {
           differenceText = `Giving up about ${money(Math.abs(diff))} vs fair value.`;
         }
@@ -449,6 +481,14 @@
       $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${qualityBarClass}`;
       $('qualityBar').style.width = `${qualityBarWidth}%`;
       $('fairRangeEl').textContent = `${money(low)} – ${money(high)}`;
+
+      maybeShowStaleOddsWarning({
+        cashout,
+        fairValue,
+        cashoutRatio,
+        remainingOdds,
+        actualHedgeOdds
+      });
 
       $('cashOptionTitle').textContent = 'Cash out now';
       $('cashOptionSub').textContent = cashoutProfit !== null
@@ -499,8 +539,7 @@
           actStake,
           actualHedgeOdds,
           actFloor,
-          actFeasibility,
-          'Hedge'
+          actFeasibility
         );
       } else {
         $('actualRow').classList.add('hidden-soft');
