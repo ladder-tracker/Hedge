@@ -132,6 +132,20 @@
       border: 1px solid rgba(251, 191, 36, 0.22);
       color: rgb(253 224 71);
     }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: rgb(226 232 240);
+      font-size: 12px;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -168,10 +182,13 @@
 
       <div id="resultWrap" class="hidden-soft space-y-4">
         <div class="glass-soft rounded-[26px] p-5 space-y-3">
-          <div id="fairValueEl" class="text-3xl sm:text-4xl font-bold leading-tight"></div>
-          <div id="cashoutGradeEl" class="text-2xl font-bold"></div>
-          <div id="cashoutDiffEl" class="text-slate-300 text-lg"></div>
-          <div id="summaryEl" class="text-slate-300 text-base"></div>
+          <div class="space-y-2">
+            <div class="text-sm text-slate-400 font-medium">Fair value</div>
+            <div id="fairValueEl" class="text-2xl sm:text-3xl font-bold leading-tight"></div>
+            <div id="cashoutGradeEl" class="text-xl sm:text-2xl font-bold"></div>
+            <div id="cashoutDiffEl" class="text-slate-300 text-base sm:text-lg"></div>
+            <div id="summaryEl" class="text-slate-300 text-base"></div>
+          </div>
         </div>
 
         <div id="warningCard" class="warn-card hidden-soft">
@@ -194,6 +211,7 @@
             <div>
               <div id="estimatedTitle" class="text-lg font-bold"></div>
               <div id="estimatedSub" class="mt-1 text-slate-300 text-sm"></div>
+              <div id="estimatedChip" class="chip"></div>
             </div>
             <div id="estimatedProfit" class="text-xl font-bold"></div>
           </div>
@@ -202,6 +220,7 @@
             <div>
               <div id="actualTitle" class="text-lg font-bold"></div>
               <div id="actualSub" class="mt-1 text-slate-300 text-sm"></div>
+              <div id="actualChip" class="chip"></div>
             </div>
             <div id="actualProfit" class="text-xl font-bold"></div>
           </div>
@@ -260,7 +279,7 @@
       <div class="text-xl font-bold">Actual hedge line</div>
       <div class="text-slate-300 text-sm leading-6">
         Add the actual opposite-side line you can bet for a better estimate.
-        Leave it blank and the tool uses an estimated line.
+        Leave it blank and the tool uses an estimated line based on the entered market odds.
       </div>
       <button
         id="closeModalBtn"
@@ -322,11 +341,11 @@
     }
 
     function qualityLabel(ratio) {
-      if (ratio >= 1.05) return { label: 'Strong', color: 'text-emerald-300', bar: 'bg-emerald-500' };
-      if (ratio >= 0.90) return { label: 'Fair', color: 'text-lime-300', bar: 'bg-lime-500' };
-      if (ratio >= 0.75) return { label: 'Slightly discounted', color: 'text-yellow-300', bar: 'bg-yellow-500' };
+      if (ratio >= 1.05) return { label: 'Above fair', color: 'text-emerald-300', bar: 'bg-emerald-500' };
+      if (ratio >= 0.90) return { label: 'Close to fair', color: 'text-lime-300', bar: 'bg-lime-500' };
+      if (ratio >= 0.75) return { label: 'Slight discount', color: 'text-yellow-300', bar: 'bg-yellow-500' };
       if (ratio >= 0.60) return { label: 'Discounted', color: 'text-amber-300', bar: 'bg-amber-500' };
-      return { label: 'Poor', color: 'text-rose-300', bar: 'bg-rose-500' };
+      return { label: 'Low cashout', color: 'text-rose-300', bar: 'bg-rose-500' };
     }
 
     function getOriginalCombinedOdds(stake, payout) {
@@ -384,32 +403,26 @@
       $('infoModal').setAttribute('aria-hidden', 'true');
     }
 
-    function setHedgeRow(titleEl, subEl, profitEl, stakeNeeded, odds, lockedProfit, feasibility, labelPrefix = 'Hedge') {
-      titleEl.textContent = `${labelPrefix} ${money(stakeNeeded)} at ${odds > 0 ? `+${odds}` : odds}`;
-      subEl.textContent = `${feasibility} • locks in ${money(lockedProfit)} profit`;
+    function setHedgeRow(titleEl, subEl, profitEl, chipEl, stakeNeeded, odds, lockedProfit, feasibility, prefixText = 'Hedge') {
+      titleEl.textContent = `${prefixText} ${money(stakeNeeded)} at ${odds > 0 ? `+${odds}` : odds}`;
+      subEl.textContent = `Locks in ${money(lockedProfit)} profit`;
       profitEl.textContent = money(lockedProfit);
+      chipEl.textContent = feasibility;
     }
 
-    function maybeShowStaleOddsWarning({
-      cashout,
-      fairValue,
-      cashoutRatio,
-      remainingOdds,
-      actualHedgeOdds
-    }) {
+    function maybeShowWarning(cashoutRatio, remainingOdds, actualHedgeOdds) {
       $('warningCard').classList.add('hidden-soft');
 
-      if (!Number.isFinite(cashout) || cashout <= 0) return;
       if (actualHedgeOdds !== null) return;
+      if (!Number.isFinite(cashoutRatio)) return;
 
-      const longshot = remainingOdds >= 10000;
-      const hugeGap = cashoutRatio >= 1.75;
-      const moderateGap = cashoutRatio >= 1.30 && remainingOdds >= 5000;
+      const likelyStaleOutright = remainingOdds >= 5000 && cashoutRatio >= 1.30;
+      const extremeMismatch = cashoutRatio >= 1.75;
 
-      if (longshot && (hugeGap || moderateGap)) {
+      if (likelyStaleOutright || extremeMismatch) {
         $('warningCard').classList.remove('hidden-soft');
         $('warningText').textContent =
-          'This cashout is much higher than the entered odds imply. For futures and outrights, the odds shown on the original slip are often stale. Use the current market price or an actual hedge line if you can find one.';
+          'This cashout looks high relative to the entered odds. For futures, boosted bets, and niche props, original slip odds or non-hedgeable markets can mislead the estimate. Use the current market price or add an actual hedge line if available.';
       }
     }
 
@@ -432,15 +445,14 @@
 
       const { remainingProb, estimatedOppositeLine } = estimateOppositeLineWithVig(remainingOdds, 0.04);
       const fairValue = payout * remainingProb;
-      const fairProfit = fairValue - stake;
+      const holdProfit = fairValue - stake;
       const low = fairValue * 0.92;
       const high = fairValue * 1.08;
       const originalCombined = getOriginalCombinedOdds(stake, payout);
 
       showResults();
 
-      $('fairValueEl').textContent = `Fair value ≈ ${money(fairValue)}`;
-      $('summaryEl').textContent = `Win ${pct(remainingProb)} • 1 leg left • Original: ${originalCombined ? `+${originalCombined}` : '—'}`;
+      $('fairValueEl').textContent = money(fairValue);
 
       let gradeText = 'Add cashout offer';
       let gradeClass = 'text-slate-200';
@@ -456,9 +468,10 @@
         cashoutRatio = cashout / fairValue;
         const quality = qualityLabel(cashoutRatio);
         const diff = cashout - fairValue;
+        const giveUpPct = fairValue > 0 ? ((fairValue - cashout) / fairValue) * 100 : 0;
         const suspicious = actualHedgeOdds === null && remainingOdds >= 5000 && cashoutRatio >= 1.30;
 
-        gradeText = suspicious ? `Check odds → ${money(cashout)}` : `${quality.label} → ${money(cashout)}`;
+        gradeText = suspicious ? `Check odds: ${money(cashout)}` : `Cashout: ${money(cashout)}`;
         gradeClass = suspicious ? 'text-yellow-300' : quality.color;
         ratioText = `${(cashoutRatio * 100).toFixed(0)}% of fair value`;
         qualityBarWidth = Math.min(cashoutRatio * 100, 100);
@@ -466,35 +479,29 @@
 
         if (diff >= 0) {
           differenceText = suspicious
-            ? `Cashout is about ${money(Math.abs(diff))} above fair value based on the entered odds.`
-            : `Offer is about ${money(Math.abs(diff))} above fair value.`;
+            ? 'Cashout looks high relative to the entered odds.'
+            : `Locks in ${money(cashoutProfit)} profit at about ${money(Math.abs(diff))} above fair value.`;
         } else {
-          differenceText = `Giving up about ${money(Math.abs(diff))} vs fair value.`;
+          differenceText = `Giving up ${giveUpPct.toFixed(0)}% to lock in ${money(cashoutProfit)} profit.`;
         }
       }
 
-      $('cashoutGradeEl').className = `text-2xl font-bold ${gradeClass}`;
+      $('cashoutGradeEl').className = `text-xl sm:text-2xl font-bold ${gradeClass}`;
       $('cashoutGradeEl').textContent = gradeText;
       $('cashoutDiffEl').textContent = differenceText;
+      $('summaryEl').textContent = `Win ${pct(remainingProb)} • 1 leg left • Hold profit ${money(holdProfit)}`;
 
       $('cashoutRatioEl').textContent = ratioText;
       $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${qualityBarClass}`;
       $('qualityBar').style.width = `${qualityBarWidth}%`;
       $('fairRangeEl').textContent = `${money(low)} – ${money(high)}`;
 
-      maybeShowStaleOddsWarning({
-        cashout,
-        fairValue,
-        cashoutRatio,
-        remainingOdds,
-        actualHedgeOdds
-      });
+      maybeShowWarning(cashoutRatio, remainingOdds, actualHedgeOdds);
 
-      $('cashOptionTitle').textContent = 'Cash out now';
-      $('cashOptionSub').textContent = cashoutProfit !== null
+      $('cashoutOptionSub').textContent = cashoutProfit !== null
         ? `Locks in ${money(cashoutProfit)} profit`
         : 'Enter a cashout offer';
-      $('cashOptionProfit').textContent = cashoutProfit !== null ? money(cashoutProfit) : '—';
+      $('cashoutOptionProfit').textContent = cashoutProfit !== null ? money(cashoutProfit) : '—';
 
       if (estimatedOppositeLine === null) {
         $('estimatedRow').classList.add('hidden-soft');
@@ -517,10 +524,12 @@
         $('estimatedTitle'),
         $('estimatedSub'),
         $('estimatedProfit'),
+        $('estimatedChip'),
         estStake,
         estimatedOppositeLine,
         estFloor,
-        estFeasibility
+        estFeasibility,
+        'Estimated hedge'
       );
 
       if (actualHedgeOdds !== null) {
@@ -536,10 +545,12 @@
           $('actualTitle'),
           $('actualSub'),
           $('actualProfit'),
+          $('actualChip'),
           actStake,
           actualHedgeOdds,
           actFloor,
-          actFeasibility
+          actFeasibility,
+          'Actual hedge'
         );
       } else {
         $('actualRow').classList.add('hidden-soft');
