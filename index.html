@@ -9,7 +9,187 @@
   <title>Hedge / Cashout Calculator</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-      </style>
+    :root {
+      color-scheme: dark;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(168,85,247,0.12), transparent 30%),
+        linear-gradient(180deg, #08111f 0%, #0b1324 45%, #0f172a 100%);
+      color: #fff;
+    }
+
+    .glass {
+      background: rgba(15, 23, 42, 0.72);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.28);
+    }
+
+    .glass-soft {
+      background: rgba(15, 23, 42, 0.56);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(148, 163, 184, 0.10);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    }
+
+    .input-base {
+      width: 100%;
+      height: 56px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(30, 41, 59, 0.92);
+      color: white;
+      padding: 0 16px;
+      font-size: 17px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    .input-base::placeholder {
+      color: rgb(148 163 184);
+    }
+
+    .input-base:focus {
+      border-color: rgba(96, 165, 250, 0.45);
+      box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.25) inset;
+    }
+
+    .mini-card {
+      border-radius: 20px;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 14px;
+    }
+
+    .option-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(2, 6, 23, 0.45);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .hidden-soft {
+      display: none !important;
+    }
+
+    .details-toggle {
+      user-select: none;
+    }
+
+    .info-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: rgb(148 163 184);
+      font-size: 12px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex: 0 0 auto;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(8px);
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .watermark {
+      font-size: 12px;
+      color: rgba(226,232,240,0.45);
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    .warn-card {
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(120, 53, 15, 0.18);
+      border: 1px solid rgba(251, 191, 36, 0.22);
+      color: rgb(253 224 71);
+    }
+
+    .toggle-btn {
+      min-width: 84px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
+      color: rgb(226 232 240);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 160ms ease;
+    }
+
+    .toggle-btn.is-on {
+      background: rgba(59,130,246,0.18);
+      border-color: rgba(96,165,250,0.35);
+      color: white;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .segment-btn {
+      height: 42px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: rgb(203 213 225);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 160ms ease;
+    }
+
+    .segment-btn.active {
+      background: rgba(59,130,246,0.16);
+      border-color: rgba(96,165,250,0.38);
+      color: white;
+    }
+
+    .label-sm {
+      font-size: 12px;
+      color: rgb(148 163 184);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 480px) {
+      .segmented {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
   <div class="max-w-xl mx-auto p-4 pb-10 space-y-4">
@@ -52,6 +232,33 @@
               class="input-base mt-1"
               inputmode="text"
               placeholder="Odds for added pre-game leg"
+            />
+          </div>
+        </div>
+
+        <div class="mini-card space-y-3">
+          <div class="label-sm">Hedge mode</div>
+          <div class="segmented">
+            <button id="modeFull" type="button" class="segment-btn active">Full hedge</button>
+            <button id="modeTarget" type="button" class="segment-btn">Target profit</button>
+            <button id="modePartial" type="button" class="segment-btn">Partial %</button>
+          </div>
+
+          <div id="targetWrap" class="hidden-soft">
+            <input
+              id="targetProfit"
+              class="input-base"
+              inputmode="decimal"
+              placeholder="Target guaranteed profit"
+            />
+          </div>
+
+          <div id="partialWrap" class="hidden-soft">
+            <input
+              id="partialPct"
+              class="input-base"
+              inputmode="decimal"
+              placeholder="Partial hedge % (example: 50)"
             />
           </div>
         </div>
@@ -156,6 +363,10 @@
               <span class="text-slate-400">Estimated opposite line used:</span>
               <span id="estimatedOppLineEl"></span>
             </div>
+            <div class="text-sm text-slate-300">
+              <span class="text-slate-400">Selected hedge mode:</span>
+              <span id="modeSummaryEl"></span>
+            </div>
           </div>
         </div>
 
@@ -189,6 +400,404 @@
   </div>
 
   <script>
-      </script>
+    const state = {
+      detailsOpen: false,
+      extraLegEnabled: false,
+      hedgeMode: 'full'
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function money(n) {
+      return `$${Number(n || 0).toFixed(2)}`;
+    }
+
+    function pct(n) {
+      return `${(Number(n || 0) * 100).toFixed(1)}%`;
+    }
+
+    function clamp(n, min, max) {
+      return Math.min(Math.max(n, min), max);
+    }
+
+    function sanitizeOdds(v) {
+      if (!v) return '';
+      v = String(v).trim().replace(/\s+/g, '').replace(/[^0-9+-]/g, '');
+      if (v.length > 1) v = v[0] + v.slice(1).replace(/[+-]/g, '');
+      if (/^\d+$/.test(v)) v = '+' + v;
+      return v;
+    }
+
+    function parseOdds(v) {
+      if (!v) return null;
+      const cleaned = sanitizeOdds(v);
+      if (!/^[+-]?\d+$/.test(cleaned)) return null;
+      const n = Number(cleaned);
+      return Number.isFinite(n) && n !== 0 ? n : null;
+    }
+
+    function oddsToProb(o) {
+      return o > 0 ? 100 / (o + 100) : Math.abs(o) / (Math.abs(o) + 100);
+    }
+
+    function probToAmerican(prob) {
+      if (!Number.isFinite(prob) || prob <= 0 || prob >= 1) return null;
+      if (prob >= 0.5) return -Math.round((prob / (1 - prob)) * 100);
+      return Math.round(((1 - prob) / prob) * 100);
+    }
+
+    function americanToDecimal(o) {
+      return o > 0 ? 1 + (o / 100) : 1 + (100 / Math.abs(o));
+    }
+
+    function qualityLabel(ratio) {
+      if (ratio >= 1.05) return { color: 'text-emerald-300', bar: 'bg-emerald-500' };
+      if (ratio >= 0.90) return { color: 'text-lime-300', bar: 'bg-lime-500' };
+      if (ratio >= 0.75) return { color: 'text-yellow-300', bar: 'bg-yellow-500' };
+      if (ratio >= 0.60) return { color: 'text-amber-300', bar: 'bg-amber-500' };
+      return { color: 'text-rose-300', bar: 'bg-rose-500' };
+    }
+
+    function estimateOppositeLineWithVig(winProb, hold = 0.04) {
+      const oppositeProb = 1 - winProb;
+      const viggedOppositeProb = clamp(oppositeProb * (1 + hold), 0.0001, 0.9999);
+      return probToAmerican(viggedOppositeProb);
+    }
+
+    function hideResults(message) {
+      $('resultWrap').classList.add('hidden-soft');
+      $('emptyState').classList.remove('hidden-soft');
+      $('emptyState').textContent = message;
+      $('warningCard').classList.add('hidden-soft');
+    }
+
+    function showResults() {
+      $('resultWrap').classList.remove('hidden-soft');
+      $('emptyState').classList.add('hidden-soft');
+    }
+
+    function updateDetailsPanel() {
+      $('detailsPanel').classList.toggle('hidden-soft', !state.detailsOpen);
+      $('detailsToggle').setAttribute('aria-expanded', String(state.detailsOpen));
+      $('detailsChevron').textContent = state.detailsOpen ? 'Hide' : 'Show';
+    }
+
+    function updateExtraLegUI() {
+      $('extraLegWrap').classList.toggle('hidden-soft', !state.extraLegEnabled);
+      $('toggleExtraLeg').classList.toggle('is-on', state.extraLegEnabled);
+      $('toggleExtraLeg').setAttribute('aria-pressed', String(state.extraLegEnabled));
+      $('toggleExtraLegText').textContent = state.extraLegEnabled ? 'On' : 'Off';
+    }
+
+    function updateModeUI() {
+      $('modeFull').classList.toggle('active', state.hedgeMode === 'full');
+      $('modeTarget').classList.toggle('active', state.hedgeMode === 'target');
+      $('modePartial').classList.toggle('active', state.hedgeMode === 'partial');
+
+      $('targetWrap').classList.toggle('hidden-soft', state.hedgeMode !== 'target');
+      $('partialWrap').classList.toggle('hidden-soft', state.hedgeMode !== 'partial');
+    }
+
+    function openModal() {
+      $('infoModal').classList.remove('hidden-soft');
+      $('infoModal').setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+      $('infoModal').classList.add('hidden-soft');
+      $('infoModal').setAttribute('aria-hidden', 'true');
+    }
+
+    function setHedgeRow(titleEl, subEl, profitEl, stakeNeeded, odds, profitIfTicketWins, profitIfHedgeWins, prefixText) {
+      const oddsLabel = odds > 0 ? `+${odds}` : odds;
+      titleEl.textContent = `${prefixText} ${money(stakeNeeded)} at ${oddsLabel}`;
+      subEl.textContent = `Ticket wins: ${money(profitIfTicketWins)} • Hedge wins: ${money(profitIfHedgeWins)}`;
+      profitEl.textContent = money(Math.min(profitIfTicketWins, profitIfHedgeWins));
+    }
+
+    function maybeShowWarning(cashoutRatio, remainingOdds, extraLegOdds, actualHedgeOdds) {
+      $('warningCard').classList.add('hidden-soft');
+
+      if (actualHedgeOdds !== null) return;
+      if (!Number.isFinite(cashoutRatio)) return;
+
+      const largeMismatch = cashoutRatio >= 1.75;
+      const staleInput = remainingOdds >= 5000 || (extraLegOdds !== null && extraLegOdds >= 5000);
+
+      if (largeMismatch || staleInput) {
+        $('warningCard').classList.remove('hidden-soft');
+        $('warningText').textContent =
+          'This cashout may look unusually high relative to the entered odds. Futures, boosts, stale prices, and non-hedgeable markets can distort the estimate. Add the actual hedge line when available.';
+      }
+    }
+
+    function calcHedgeStake(mode, decimalOdds, payout, stake, targetProfit, partialPct) {
+      const winMultiplier = decimalOdds - 1;
+
+      if (mode === 'full') {
+        return payout / decimalOdds;
+      }
+
+      if (mode === 'target') {
+        if (!Number.isFinite(targetProfit)) return null;
+        const hedgeStake = (targetProfit + stake) / winMultiplier;
+        return hedgeStake > 0 ? hedgeStake : null;
+      }
+
+      if (mode === 'partial') {
+        if (!Number.isFinite(partialPct)) return null;
+        const clampedPct = clamp(partialPct, 0, 100) / 100;
+        const fullStake = payout / decimalOdds;
+        return fullStake * clampedPct;
+      }
+
+      return null;
+    }
+
+    function calcProfitOutcomes(payout, stake, hedgeStake, decimalOdds) {
+      const profitIfTicketWins = payout - stake - hedgeStake;
+      const profitIfHedgeWins = (hedgeStake * (decimalOdds - 1)) - stake;
+      return {
+        profitIfTicketWins,
+        profitIfHedgeWins,
+        floor: Math.min(profitIfTicketWins, profitIfHedgeWins)
+      };
+    }
+
+    function calc() {
+      const stake = parseFloat($('stake').value);
+      const payout = parseFloat($('payout').value);
+      const cashout = parseFloat($('cashout').value);
+      const remainingOdds = parseOdds($('remainingOdds').value);
+      const extraLegOdds = parseOdds($('extraLegOdds').value);
+      const actualHedgeOdds = parseOdds($('actualHedgeOdds').value);
+      const targetProfit = parseFloat($('targetProfit').value);
+      const partialPct = parseFloat($('partialPct').value);
+
+      if (!Number.isFinite(stake) || !Number.isFinite(payout) || payout <= stake) {
+        hideResults('Enter a valid stake and payout. Payout must be greater than stake.');
+        return;
+      }
+
+      if (remainingOdds === null) {
+        hideResults('Enter the current market odds for the remaining leg.');
+        return;
+      }
+
+      if (state.extraLegEnabled && extraLegOdds === null) {
+        hideResults('Enter the odds for the added pre-game leg.');
+        return;
+      }
+
+      if (state.hedgeMode === 'target' && !Number.isFinite(targetProfit)) {
+        hideResults('Enter a target guaranteed profit.');
+        return;
+      }
+
+      if (state.hedgeMode === 'partial' && !Number.isFinite(partialPct)) {
+        hideResults('Enter a partial hedge percentage.');
+        return;
+      }
+
+      const remainingProb = oddsToProb(remainingOdds);
+      const secondLegProb = state.extraLegEnabled ? oddsToProb(extraLegOdds) : 1;
+      const combinedWinProb = remainingProb * secondLegProb;
+
+      const fairValue = payout * combinedWinProb;
+      const holdProfitIfWin = payout - stake;
+      const weightedHoldValue = fairValue - stake;
+      const low = fairValue * 0.92;
+      const high = fairValue * 1.08;
+
+      showResults();
+
+      $('fairValueEl').textContent = money(fairValue);
+
+      let gradeText = 'Add cashout offer';
+      let gradeClass = 'text-slate-200';
+      let differenceText = 'Add the cashout offer to compare it to fair value.';
+      let ratioText = 'No offer entered';
+      let qualityBarWidth = 0;
+      let qualityBarClass = 'bg-slate-600';
+      let cashoutRatio = null;
+      let cashoutProfit = null;
+
+      if (Number.isFinite(cashout) && cashout > 0) {
+        cashoutProfit = cashout - stake;
+        cashoutRatio = fairValue > 0 ? cashout / fairValue : null;
+
+        if (cashoutRatio !== null) {
+          const quality = qualityLabel(cashoutRatio);
+          const diff = cashout - fairValue;
+          const giveUpPct = fairValue > 0 ? ((fairValue - cashout) / fairValue) * 100 : 0;
+
+          gradeText = `Cashout: ${money(cashout)}`;
+          gradeClass = quality.color;
+          ratioText = `${(cashoutRatio * 100).toFixed(0)}% of fair value`;
+          qualityBarWidth = Math.min(cashoutRatio * 100, 100);
+          qualityBarClass = quality.bar;
+
+          if (diff >= 0) {
+            differenceText = `Locks in ${money(cashoutProfit)} profit at about ${money(Math.abs(diff))} above fair value.`;
+          } else {
+            differenceText = `Giving up ${giveUpPct.toFixed(0)}% to lock in ${money(cashoutProfit)} profit.`;
+          }
+        }
+      } else {
+        gradeText = `Hold value: ${money(fairValue)}`;
+        differenceText = 'No cashout entered. Use the hedge options below to compare outcomes.';
+      }
+
+      $('cashoutGradeEl').className = `text-xl sm:text-2xl font-bold ${gradeClass}`;
+      $('cashoutGradeEl').textContent = gradeText;
+      $('cashoutDiffEl').textContent = differenceText;
+      $('summaryEl').textContent =
+        `${state.extraLegEnabled ? '2 legs left' : '1 leg left'} • Combined win ${pct(combinedWinProb)} • Weighted hold value ${money(weightedHoldValue)}`;
+
+      $('cashoutRatioEl').textContent = ratioText;
+      $('qualityBar').className = `h-full rounded-full transition-all duration-200 ${qualityBarClass}`;
+      $('qualityBar').style.width = `${qualityBarWidth}%`;
+      $('fairRangeEl').textContent = `${money(low)} – ${money(high)}`;
+
+      maybeShowWarning(cashoutRatio, remainingOdds, state.extraLegEnabled ? extraLegOdds : null, actualHedgeOdds);
+
+      const estimatedOppositeLine = estimateOppositeLineWithVig(combinedWinProb, 0.04);
+
+      if (estimatedOppositeLine === null) {
+        $('estimatedRow').classList.add('hidden-soft');
+        $('actualRow').classList.add('hidden-soft');
+        $('noHedgeCard').classList.remove('hidden-soft');
+      } else {
+        $('noHedgeCard').classList.add('hidden-soft');
+
+        const estDecimal = americanToDecimal(estimatedOppositeLine);
+        const estStake = calcHedgeStake(state.hedgeMode, estDecimal, payout, stake, targetProfit, partialPct);
+
+        if (!Number.isFinite(estStake) || estStake <= 0) {
+          $('estimatedRow').classList.add('hidden-soft');
+        } else {
+          const estOutcomes = calcProfitOutcomes(payout, stake, estStake, estDecimal);
+          $('estimatedRow').classList.remove('hidden-soft');
+          setHedgeRow(
+            $('estimatedTitle'),
+            $('estimatedSub'),
+            $('estimatedProfit'),
+            estStake,
+            estimatedOppositeLine,
+            estOutcomes.profitIfTicketWins,
+            estOutcomes.profitIfHedgeWins,
+            'Estimated hedge'
+          );
+        }
+      }
+
+      if (actualHedgeOdds !== null) {
+        const actDecimal = americanToDecimal(actualHedgeOdds);
+        const actStake = calcHedgeStake(state.hedgeMode, actDecimal, payout, stake, targetProfit, partialPct);
+
+        if (!Number.isFinite(actStake) || actStake <= 0) {
+          $('actualRow').classList.add('hidden-soft');
+        } else {
+          const actOutcomes = calcProfitOutcomes(payout, stake, actStake, actDecimal);
+          $('actualRow').classList.remove('hidden-soft');
+          setHedgeRow(
+            $('actualTitle'),
+            $('actualSub'),
+            $('actualProfit'),
+            actStake,
+            actualHedgeOdds,
+            actOutcomes.profitIfTicketWins,
+            actOutcomes.profitIfHedgeWins,
+            'Actual hedge'
+          );
+        }
+      } else {
+        $('actualRow').classList.add('hidden-soft');
+      }
+
+      $('combinedProbEl').textContent = pct(combinedWinProb);
+      $('holdProfitEl').textContent = money(holdProfitIfWin);
+      $('estimatedOppLineEl').textContent = estimatedOppositeLine !== null
+        ? (estimatedOppositeLine > 0 ? `+${estimatedOppositeLine}` : `${estimatedOppositeLine}`)
+        : '—';
+
+      let modeText = 'Full hedge';
+      if (state.hedgeMode === 'target') {
+        modeText = `Target profit (${money(targetProfit)})`;
+      }
+      if (state.hedgeMode === 'partial') {
+        modeText = `Partial hedge (${Number(partialPct || 0).toFixed(0)}%)`;
+      }
+      $('modeSummaryEl').textContent = modeText;
+    }
+
+    document.querySelectorAll('input').forEach((input) => {
+      input.addEventListener('input', calc);
+    });
+
+    $('remainingOdds').addEventListener('input', (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+    });
+
+    $('extraLegOdds').addEventListener('input', (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+    });
+
+    $('actualHedgeOdds').addEventListener('input', (e) => {
+      e.target.value = sanitizeOdds(e.target.value);
+    });
+
+    $('toggleExtraLeg').onclick = () => {
+      state.extraLegEnabled = !state.extraLegEnabled;
+      if (!state.extraLegEnabled) {
+        $('extraLegOdds').value = '';
+      }
+      updateExtraLegUI();
+      calc();
+    };
+
+    $('modeFull').onclick = () => {
+      state.hedgeMode = 'full';
+      updateModeUI();
+      calc();
+    };
+
+    $('modeTarget').onclick = () => {
+      state.hedgeMode = 'target';
+      updateModeUI();
+      calc();
+    };
+
+    $('modePartial').onclick = () => {
+      state.hedgeMode = 'partial';
+      updateModeUI();
+      calc();
+    };
+
+    $('detailsToggle').onclick = () => {
+      state.detailsOpen = !state.detailsOpen;
+      updateDetailsPanel();
+    };
+
+    $('detailsToggle').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        state.detailsOpen = !state.detailsOpen;
+        updateDetailsPanel();
+      }
+    });
+
+    $('hedgeInfoBtn').onclick = openModal;
+    $('closeModalBtn').onclick = closeModal;
+
+    $('infoModal').addEventListener('click', (e) => {
+      if (e.target === $('infoModal')) closeModal();
+    });
+
+    updateDetailsPanel();
+    updateExtraLegUI();
+    updateModeUI();
+    calc();
+  </script>
 </body>
 </html>
